@@ -1,0 +1,22 @@
+{
+  "name": "neura-cognitive-banking",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "NEURA Cognitive Banking Platform with Islamic Finance Integration",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build -w backend && npm run build -w frontend",
+    "start": "cd backend && npm start",
+    "type-check": "npm run type-check -w backend && npm run type-check -w frontend",
+    "install:all": "npm install && npm install -w backend && npm install -w frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
