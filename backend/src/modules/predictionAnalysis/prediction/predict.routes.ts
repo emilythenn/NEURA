@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { env } from "../../../config/env";
 import { predict, getHistory, saveHistoryHandler, deleteHistory } from "./predict.controller";
+import { getPredictionHistory } from "./predict.service";
 
 // ── /api/predict-purchase ─────────────────────────────────────────────────────
 export const purchaseRouter = Router();
@@ -33,10 +34,29 @@ purchaseRouter.post("/", predictLimiter, predict);
 // ── /api/predict-history ──────────────────────────────────────────────────────
 export const historyRouter = Router();
 
-historyRouter.get("/", (req: Request, res: Response, next: NextFunction) => {
-  (req.params as Record<string, string>).userId = "default_user";
-  getHistory(req, res, next);
+historyRouter.get("/", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req.query.userId as string) ?? "default_user";
+    const limit  = parseInt((req.query.limit as string) ?? "20", 10);
+    const data   = await getPredictionHistory(userId, limit);
+    res.json(data);  // frontend expects raw array, not wrapped
+  } catch (e) {
+    console.error("Failed to get prediction history:", e);
+    // Return empty array instead of error to prevent UI breakage
+    res.json([]);
+  }
 });
-historyRouter.get("/:userId",  getHistory);
+historyRouter.get("/:userId", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.params.userId ?? "default_user";
+    const limit  = parseInt((req.query.limit as string) ?? "20", 10);
+    const data   = await getPredictionHistory(userId, limit);
+    res.json(data);  // frontend expects raw array, not wrapped
+  } catch (e) {
+    console.error("Failed to get prediction history:", e);
+    // Return empty array instead of error to prevent UI breakage
+    res.json([]);
+  }
+});
 historyRouter.post("/",        saveHistoryHandler);
 historyRouter.delete("/:id",   deleteHistory);

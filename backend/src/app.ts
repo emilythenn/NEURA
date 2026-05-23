@@ -13,13 +13,15 @@ const __dirname = path.dirname(__filename);
 import { router as scamPreventionRouter, setGeminiAI, router as caregiverOTPRouter } from "./modules/scamPrevention";
 import { createRealityLensRouter, setRealityLensGeminiAI } from "./modules/realityLens";
 import { router as chatbotRouter, setChatbotGeminiAI, setChatbotStateGetter } from "./modules/chatbot/index";
+import { purchaseRouter, historyRouter } from "./modules/predictionAnalysis/prediction/predict.routes";
+import trackerRouter from "./modules/predictionAnalysis/tracker/tracker.routes";
 import { checkBlacklist } from "./modules/scamPrevention/service";
+import { getDb, COLLECTIONS } from "./config/firebase";
 
 dotenv.config({
   path: path.join(__dirname, "..", ".env"),
 });
 
-// Optional Firebase Admin SDK initialization
 const serviceAccountKeyPath = path.join(process.cwd(), "firebase-service-account.json");
 if (fs.existsSync(serviceAccountKeyPath)) {
   try {
@@ -38,7 +40,6 @@ app.use(express.json({ limit: "50mb" }));
 
 const PORT = Number(process.env.PORT) || 3000;
 
-// Initialize GoogleGenAI client lazy style
 let generativeAI: GoogleGenAI | null = null;
 function getGeminiAI() {
   if (!generativeAI) {
@@ -55,10 +56,8 @@ function getGeminiAI() {
   return generativeAI;
 }
 
-// Initialize Gemini client once (no-op in demo mode)
 getGeminiAI();
 
-// SIMULATED DATABASE STATE
 let accountsState: any = {
   totalBalance: 10000.0,
   discretionaryBudget: 800.0,
@@ -82,14 +81,37 @@ let accountsState: any = {
   ]
 };
 
-// API ROUTES
+async function loadAccountStateFromFirestore() {
+  try {
+    const db = getDb();
+    const snap = await db.collection(COLLECTIONS.STATE).doc("default_user").get();
+    if (snap.exists) {
+      const firestoreState = snap.data();
+      accountsState = {
+        ...accountsState,
+        ...firestoreState,
+      };
+      console.log("✅ Account state loaded from Firestore");
+      return true;
+    } else {
+      console.log("ℹ️ No account state in Firestore, using defaults");
+      return false;
+    }
+  } catch (err: any) {
+    console.error("⚠️ Failed to load account state from Firestore:", err.message);
+    return false;
+  }
+}
 
-// 1. GET Current state
 app.get("/api/state", (req, res) => {
   res.json(accountsState);
 });
 
-// 2. TOGGLE Elderly Mode
+app.post("/api/state/refresh", async (req, res) => {
+  const success = await loadAccountStateFromFirestore();
+  res.json({ success, state: accountsState });
+});
+
 app.post("/api/toggle-elderly", (req, res) => {
   const { enabled, limit, caregiverName, caregiverPhone } = req.body;
   if (typeof enabled === "boolean") accountsState.elderlyMode = enabled;
@@ -99,9 +121,6 @@ app.post("/api/toggle-elderly", (req, res) => {
   res.json({ success: true, state: accountsState });
 });
 
-// 3. RETRIEVE simulated mule databases - Now in scamPrevention module via /api/check-blacklist
-
-// 4. RESET database state to default
 app.post("/api/reset-state", (req, res) => {
   accountsState.totalBalance = 10000.00;
   accountsState.discretionaryBudget = 800.00;
@@ -110,133 +129,17 @@ app.post("/api/reset-state", (req, res) => {
   res.json({ success: true, state: accountsState });
 });
 
-// 5. CAREGIVER ACTION: APPROVE/REJECT PENDING TRANSACTION
 app.post("/api/caregiver-approval", (req, res) => {
   const { status } = req.body;
   accountsState.isCaregiverApproved = status === "approve";
   res.json({ success: true, approvedState: accountsState.isCaregiverApproved });
 });
 
-// 6. MODULE 1: PREDICTIVE INTELLIGENCE PURCHASE EVALUATION PIPELINE
-app.post("/api/predict-purchase", async (req, res) => {
-  const { amount, category, itemName, isImpulseSignal } = req.body;
-  const purchaseAmount = parseFloat(amount || "0");
-  const parsedCategory = category || "Wants";
-  const labelText = itemName || "Generic Item";
-
-  if (isNaN(purchaseAmount) || purchaseAmount <= 0) {
-    return res.status(400).json({ error: "Invalid purchase amount specified" });
-  }
-
-  const baselineMean = 150.0;
-  const baselineStdDev = 75.0;
-  const zScore = (purchaseAmount - baselineMean) / baselineStdDev;
-  const isSpendingNormal = Math.abs(zScore) <= 1.5;
-
-  let classification: "reasonable" | "risky" | "impulsive" | "financially heavy" = "reasonable";
-  if (purchaseAmount > 1000) {
-    classification = "financially heavy";
-  } else if (purchaseAmount > accountsState.discretionaryBudget) {
-    classification = "risky";
-  } else if (isImpulseSignal) {
-    classification = "impulsive";
-  } else if (purchaseAmount > baselineMean + baselineStdDev) {
-    classification = "risky";
-  }
-
-  const remainingDiscretionaryBudget = accountsState.discretionaryBudget;
-  const budgetImpactPct = (purchaseAmount / remainingDiscretionaryBudget) * 100;
-  const postSpendingCapacity = remainingDiscretionaryBudget - purchaseAmount;
-  const budgetPressure = budgetImpactPct > 90 ? "CRITICAL" : budgetImpactPct > 50 ? "HIGH" : "LOW";
-
-  const hour = new Date().getUTCHours() + 8;
-  const isLateNight = hour >= 23 || hour <= 4;
-  const impulseProbability = Math.min(
-    100,
-    (isImpulseSignal ? 40 : 10) + (isLateNight ? 35 : 0) + (classification === "impulsive" ? 25 : 0)
-  );
-
-  let riskScore = 0;
-  if (zScore > 0) riskScore += Math.min(25, zScore * 10);
-  if (budgetPressure === "CRITICAL") riskScore += 40;
-  else if (budgetPressure === "HIGH") riskScore += 25;
-  riskScore += (impulseProbability / 100) * 35;
-
-  let recommendation: "PROCEED" | "REVIEW" | "RECONSIDER" = "PROCEED";
-  let color = "🟢";
-  if (riskScore >= 65 || postSpendingCapacity < -200) {
-    recommendation = "RECONSIDER";
-    color = "🔴";
-  } else if (riskScore >= 35 || postSpendingCapacity < 0) {
-    recommendation = "REVIEW";
-    color = "🟡";
-  }
-
-  const isDemoMode = !process.env.GEMINI_API_KEY;
-  let textExplanation = `This purchase is ${(purchaseAmount / baselineMean).toFixed(1)}x higher than your usual baseline of RM ${baselineMean}. Paying RM ${purchaseAmount} will put high pressure on your remaining discretionary budget (RM ${remainingDiscretionaryBudget} remaining). We suggest delaying and thinking it over.`;
-
-  if (!isDemoMode) {
-    try {
-      const gAI = getGeminiAI();
-      const prompt = `You are a respectful personal Islamic financial CFO.
-Analyze this proposed purchase for user "${accountsState.userName}":
-Item: "${labelText}"
-Price: RM ${purchaseAmount}
-Category: "${parsedCategory}"
-User Current Discretionary Budget left: RM ${remainingDiscretionaryBudget}
-Z-score relative to normal spending: ${zScore.toFixed(2)}
-Impulse score: ${impulseProbability}%
-Predicted Type of Decision: ${classification}
-Risk recommendations: ${recommendation} (Z-Score is ${zScore.toFixed(2)}, budget remaining is RM ${postSpendingCapacity}).
-
-Generate a concise, honest, comforting Shariah-oriented 2-sentence explanation saying WHY this prediction is "${recommendation}" and what they should consider. Do not mention HTML or variables. Be extremely humble. Keep it around 40 words.`;
-
-      const response = await gAI.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: prompt
-      });
-      if (response && response.text) {
-        textExplanation = response.text.trim();
-      }
-    } catch (e: any) {
-      console.error("Gemini Purchase Predictor call failed, fallback used: ", e.message);
-    }
-  }
-
-  res.json({
-    amount: purchaseAmount,
-    category: parsedCategory,
-    itemName: labelText,
-    baseline: {
-      userBaselineMean: baselineMean,
-      zScore: zScore,
-      isNormal: isSpendingNormal
-    },
-    decisionType: classification,
-    affordability: {
-      budgetRemaining: remainingDiscretionaryBudget,
-      remainingAfterPurchase: postSpendingCapacity,
-      pressure: budgetPressure,
-      budgetImpactPct: budgetImpactPct
-    },
-    behavioral: {
-      lateNightActive: isLateNight,
-      impulseProbability: impulseProbability
-    },
-    result: {
-      recommendation,
-      color,
-      explanation: textExplanation,
-      riskScore: Math.round(riskScore)
-    }
-  });
-});
-
-// 7. MODULE 2: MULTIMODAL AGENTIC ORCHESTRATOR CHATBOT
-// Orchestrator moved to a dedicated chatbot module for clarity and maintainability
+app.use("/api/predict-purchase", purchaseRouter);
+app.use("/api/predict-history", historyRouter);
+app.use("/api/tracker", trackerRouter);
 app.use("/api", chatbotRouter);
 
-// 7b. MODULE 3: REALITY LENS VISION SCAN
 app.use(
   "/api",
   createRealityLensRouter({
@@ -289,10 +192,8 @@ app.post("/api/complete-transfer", async (req, res) => {
   });
 });
 
-// 9. ZAKAT: Auto-calculate from connected portfolio (demo)
 app.post("/api/zakat/auto-calc", (req, res) => {
-  const nisabValueRM = 29750; // demo value based on 85g @ RM350/g
-  // Sum liquid balances: totalBalance + lockedVaults amounts
+  const nisabValueRM = 29750;
   const totalBalance = accountsState.totalBalance || 0;
   const vaultsTotal = (accountsState.lockedVaults || []).reduce((s: number, v: any) => s + (Number(v.amount) || 0), 0);
   const portfolioValue = Math.round((totalBalance + vaultsTotal) * 100) / 100;
@@ -314,7 +215,6 @@ app.post("/api/zakat/auto-calc", (req, res) => {
   res.json({ success: true, ...response });
 });
 
-// 10. ZAKAT: Mock payment flow (demo)
 app.post("/api/zakat/pay", (req, res) => {
   const { amount } = req.body;
   const parsed = typeof amount === "string" ? parseFloat(amount.replace(/[^0-9.-]+/g, "")) : Number(amount || 0);
@@ -328,14 +228,25 @@ app.post("/api/zakat/pay", (req, res) => {
   res.json({ success: true, paid: `RM ${parsed.toLocaleString()}`, transaction: tx, state: accountsState });
 });
 
-// ============================================================================
-// SCAM PREVENTION MODULE - Moved to src/modules/scamPrevention
-// Register module routes with /api prefix
 app.use("/api", scamPreventionRouter);
 
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error("❌ Unhandled error:", {
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method
+  });
+  res.status(err.status || 500).json({
+    success: false,
+    error: err.message || "Internal Server Error",
+    ...(process.env.NODE_ENV !== "production" && { stack: err.stack })
+  });
+});
 
-// VITE SERVER OR FALLBACK STATIC SERVING
 export async function startServer() {
+  await loadAccountStateFromFirestore();
+  
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -352,7 +263,7 @@ export async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`NEURA Cognitive Banking Engine booted successfully on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
   });
 }
 

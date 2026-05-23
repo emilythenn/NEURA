@@ -28,6 +28,8 @@ const today = new Date().toISOString().slice(0, 10);
 const fmt = (n: number) =>
   "RM " + n.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+import { AccountsState } from "../types";
+
 interface TrackerPageProps { onBack?: () => void; }
 
 export default function TrackerPage({ onBack }: TrackerPageProps) {

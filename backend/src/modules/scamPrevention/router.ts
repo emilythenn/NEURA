@@ -15,10 +15,6 @@ import {
 
 export const router = express.Router();
 
-/**
- * POST /api/screen-transfer
- * Real-time fraud screening with risk level branching.
- */
 router.post("/screen-transfer", async (req, res) => {
   const { recipientAccountNo, recipientName, amount, senderAccountNo, discretionaryBudget } = req.body;
 
@@ -44,7 +40,6 @@ router.post("/screen-transfer", async (req, res) => {
     let quarantineId: string | undefined;
 
     if (screening.riskLevel === "RED") {
-      // Use optional chaining to safely access blacklistMatch properties if not present
       bilingual = await generateFraudExplainability({
         recipientName,
         amount: transferAmount,
@@ -56,7 +51,6 @@ router.post("/screen-transfer", async (req, res) => {
       quarantineId = `qtx_${uuidv4().replace(/-/g, "").slice(0, 10)}`;
       const now = new Date();
       
-      // Log quarantine transfer details with error isolation to prevent write failures from affecting response
       try {
         await createQuarantineTransfer({
           id: quarantineId,

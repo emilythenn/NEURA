@@ -29,8 +29,8 @@ interface PredictiveLayerProps {
 }
 export default function PredictiveLayer({ accountsState, onAskAICompanion, onSelectAction }: PredictiveLayerProps) {
   const [formData, setFormData] = useState({
-    amount: "250",
-    itemName: "Sony WH-1000XM5",
+    amount: "",
+    itemName: "",
     category: "Gadgets & Wants",
     isImpulseSignal: false
   });
@@ -58,12 +58,17 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
           discretionaryBudget: accountsState.discretionaryBudget,
         })
       });
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
       const data = await response.json();
+      console.log("Prediction result received:", data);
       // Backend wraps success responses in { success, data }
       setPredictResult(data.data ?? data);
       setActiveTab("explain");
     } catch (err) {
       console.error("Failed to predict purchase context: ", err);
+      alert(`Error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
     }
@@ -74,6 +79,7 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
       case "PROCEED":    return { bg: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />, label: "Proceed Safely",    verdictLabel: "Proceed",              msg: "Approved: Safe under your active budget constraints." };
       case "REVIEW":     return { bg: "bg-amber-50 text-amber-700 border-amber-200",       icon: <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />, label: "Review Carefully",  verdictLabel: "Review Recommended",   msg: "Caution: Approaching budget limits or baseline deviation." };
       case "RECONSIDER": return { bg: "bg-rose-50 text-rose-700 border-rose-200",          icon: <XCircle className="w-5 h-5 text-rose-600 shrink-0" />,        label: "Reconsider",        verdictLabel: "Strict Reconsideration", msg: "Warning: High risk! Over budget and abnormal purchase pattern." };
+      default: return { bg: "bg-slate-50 text-slate-700 border-slate-200", icon: <AlertTriangle className="w-5 h-5 text-slate-600 shrink-0" />, label: "Unknown", verdictLabel: "Unknown", msg: "Unable to determine verdict." };
     }
   };
 
@@ -174,13 +180,13 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
                 type="button"
                 id="impulse-signal-toggle"
                 onClick={() => setFormData({ ...formData, isImpulseSignal: !formData.isImpulseSignal })}
-                className={`w-10 h-5.5 rounded-full p-0.5 transition-colors cursor-pointer relative ${
+                className={`w-10 h-6 rounded-full p-0.5 transition-colors cursor-pointer relative ${
                   formData.isImpulseSignal ? "bg-bimb-red" : "bg-slate-300"
                 }`}
               >
                 <div
-                  className={`w-4.5 h-4.5 rounded-full bg-white shadow-md transform transition-transform ${
-                    formData.isImpulseSignal ? "translate-x-4.5" : "translate-x-0"
+                  className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
+                    formData.isImpulseSignal ? "translate-x-4" : "translate-x-0"
                   }`}
                 />
               </button>
@@ -211,9 +217,10 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
             <>
               {(() => {
                 const badge = getRecommendationBadge(predictResult.verdict);
-                // Compute baseline values from the scoring result
-                const typicalSpend = 180;
-                const zScore = (predictResult.amount - typicalSpend) / 90;
+                // Use baseline from backend scoreBreakdown or fallback
+                const typicalSpend = predictResult.scoreBreakdown?.baseline ?? 180;
+                const stdDev = predictResult.scoreBreakdown?.stdDev ?? 90;
+                const zScore = (predictResult.amount - typicalSpend) / stdDev;
                 const isNormal = Math.abs(zScore) < 1.5;
                 return (
                   <div className={`p-4 rounded-2xl border ${badge.bg}`}>
@@ -245,8 +252,9 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
 
               {/* Advanced Pipeline Diagnostics (The 4 channels) */}
               {(() => {
-                const typicalSpend = 180;
-                const zScore = (predictResult.amount - typicalSpend) / 90;
+                const typicalSpend = predictResult.scoreBreakdown?.baseline ?? 180;
+                const stdDev = predictResult.scoreBreakdown?.stdDev ?? 90;
+                const zScore = (predictResult.amount - typicalSpend) / stdDev;
                 const isNormal = Math.abs(zScore) < 1.5;
                 return (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">

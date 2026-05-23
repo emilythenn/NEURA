@@ -1,4 +1,3 @@
-// Scam Prevention Module - Main Export
 export { router } from "./router";
 export { setGeminiAI } from "./service";
 export { router as caregiverOTPRouter } from "./caregiverOTP";

@@ -54,9 +54,6 @@ export function setGeminiAI(client: GoogleGenAI | null) {
   geminiAI = client;
 }
 
-/**
- * Generate bilingual fraud explainability text via Gemini AI
- */
 export async function generateFraudExplainability(ctx: {
   recipientName: string;
   amount: number;
