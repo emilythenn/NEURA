@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { useEffect, useMemo, useRef, useState } from "react";
+=======
+import React, { useState, useRef } from "react";
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
 import { 
   Send, Sparkles, Shield, BarChart2, Heart, Moon, 
   HelpCircle, User, Paperclip, CheckCircle, AlertTriangle, Coins, FileText, Gift,
@@ -19,10 +23,14 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
   const [selectedFileLabel, setSelectedFileLabel] = useState<string | null>(null);
   const [selectedFileBase64, setSelectedFileBase64] = useState<string | null>(null);
   const [safarActionStates, setSafarActionStates] = useState<Record<string, string>>({});
+<<<<<<< HEAD
   const [pendingQuery, setPendingQuery] = useState<string>("");
   const [loadingStageIndex, setLoadingStageIndex] = useState(0);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+=======
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
 
   // Suggested direct agents mapping as specified
   const QUICK_PROMPTS = [
@@ -33,8 +41,13 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
     },
     {
       label: "🛡️ 2. Shield Agent (Security Check)",
+<<<<<<< HEAD
       text: "Validate this WhatsApp screenshot for scam language, fake authority claims, and suspicious links.",
       file: null
+=======
+      text: "Validate this WhatsApp message: 'Your LHDN account is frozen, transfer money immediately to prevent arrest!'",
+      file: "lhdn_threat.jpg"
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
     },
     {
       label: "💰 3. Mizan Agent (Personal CFO)",
@@ -58,6 +71,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
     }
   ];
 
+<<<<<<< HEAD
   const readFileAsBase64 = (file: File) =>
     new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -131,11 +145,21 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
 
     return () => window.clearInterval(timer);
   }, [isSending, loadingStages.length]);
+=======
+  // Mock visual OCR files
+  const MOCK_FILES: Record<string, string> = {
+    "lhdn_threat.jpg": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", // minimal dummy base64
+  };
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
 
   const handleSendMessage = async (customText?: string, fileToInject?: string | null) => {
     const textToSend = customText || userInput;
     const activeFile = fileToInject || selectedFileLabel;
+<<<<<<< HEAD
     const base64Content = selectedFileBase64;
+=======
+    const base64Content = activeFile ? MOCK_FILES[activeFile] : selectedFileBase64;
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
 
     if (!textToSend.trim() && !activeFile) return;
 
@@ -150,7 +174,10 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
     };
 
     onAddMessage(userMsg);
+<<<<<<< HEAD
     setPendingQuery(textToSend || activeFile || "");
+=======
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
     setUserInput("");
     setSelectedFileLabel(null);
     setSelectedFileBase64(null);
@@ -169,7 +196,10 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
         body: JSON.stringify({
           message: textToSend,
           elderlyActive: accountsState.elderlyMode,
+<<<<<<< HEAD
           isVoice: false,
+=======
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
           imageBase64: base64Content || undefined
         })
       });
@@ -182,6 +212,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
         text: data.responseText,
         agent: data.agent,
         tip: data.tip,
+<<<<<<< HEAD
         mode: data.mode,
         confidence: data.confidence,
         reasoning: data.reasoning,
@@ -195,6 +226,14 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
 
       onAddMessage(botMsg);
       setPendingQuery("");
+=======
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        actionNeeded: data.actionNeeded,
+        actionDetails: data.actionDetails
+      };
+
+      onAddMessage(botMsg);
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
 
       // Auto trigger refresh if emergency funds activated
       if (data.actionNeeded) {
@@ -212,13 +251,17 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
       });
     } finally {
       setIsSending(false);
+<<<<<<< HEAD
       setPendingQuery("");
+=======
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
       setTimeout(() => {
         chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     }
   };
 
+<<<<<<< HEAD
   // Auto-calc connected portfolio zakat (calls backend demo endpoint)
   const autoCalculatePortfolio = async () => {
     setIsSending(true);
@@ -306,11 +349,14 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
     }
   };
 
+=======
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
   const getAgentStyles = (agentName?: string) => {
     switch (agentName) {
       case "Shield":
         return {
           banner: "bg-rose-50 border-rose-200 text-rose-800",
+<<<<<<< HEAD
           shell: "bg-gradient-to-br from-rose-50 via-white to-white border-rose-200 shadow-[0_18px_50px_rgba(244,63,94,0.12)]",
           accent: "bg-rose-500",
           rail: "from-rose-500 via-rose-400 to-orange-400",
@@ -319,10 +365,16 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
           subtitle: "Fraud, Security & Mule Defense",
           mission: "Lock the threat down fast.",
           chip: "text-rose-700 bg-rose-100 border-rose-200"
+=======
+          icon: <Shield className="w-4 h-4 text-rose-600 animate-pulse shrink-0" />,
+          title: "Shield Agent 🛡️",
+          subtitle: "Fraud, Security & Mule Defense"
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
         };
       case "Mizan":
         return {
           banner: "bg-teal-50 border-teal-200 text-teal-800",
+<<<<<<< HEAD
           shell: "bg-gradient-to-br from-teal-50 via-white to-white border-teal-200 shadow-[0_18px_50px_rgba(13,148,136,0.12)]",
           accent: "bg-teal-500",
           rail: "from-teal-500 via-emerald-400 to-cyan-400",
@@ -331,10 +383,16 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
           subtitle: "Bio-Behavioral Ledger & Savings",
           mission: "Turn cash flow into a clear plan.",
           chip: "text-teal-700 bg-teal-100 border-teal-200"
+=======
+          icon: <BarChart2 className="w-4 h-4 text-teal-600 shrink-0" />,
+          title: "Mizan CFO 💰",
+          subtitle: "Bio-Behavioral Ledger & Savings"
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
         };
       case "Barakah":
         return {
           banner: "bg-amber-50 border-amber-200 text-amber-800",
+<<<<<<< HEAD
           shell: "bg-gradient-to-br from-amber-50 via-white to-white border-amber-200 shadow-[0_18px_50px_rgba(245,158,11,0.13)]",
           accent: "bg-amber-500",
           rail: "from-amber-500 via-yellow-400 to-emerald-400",
@@ -343,10 +401,16 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
           subtitle: "Strict Islamic Shariah Compliance",
           mission: "Keep the contract clean and halal.",
           chip: "text-amber-700 bg-amber-100 border-amber-200"
+=======
+          icon: <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />,
+          title: "Barakah Expert 🕌",
+          subtitle: "Strict Islamic Shariah Compliance"
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
         };
       case "Ehsan":
         return {
           banner: "bg-emerald-50 border-emerald-200 text-emerald-800",
+<<<<<<< HEAD
           shell: "bg-gradient-to-br from-emerald-50 via-white to-white border-emerald-200 shadow-[0_18px_50px_rgba(16,185,129,0.12)]",
           accent: "bg-emerald-500",
           rail: "from-emerald-500 via-lime-400 to-sky-400",
@@ -355,10 +419,16 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
           subtitle: "Accessibility & Elderly Compassion Center",
           mission: "Make the message gentle and clear.",
           chip: "text-emerald-700 bg-emerald-100 border-emerald-200"
+=======
+          icon: <Heart className="w-4 h-4 text-emerald-600 shrink-0" />,
+          title: "Ehsan Assistance 🤲",
+          subtitle: "Accessibility & Elderly Compassion Center"
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
         };
       case "Safar":
         return {
           banner: "bg-blue-50 border-blue-200 text-blue-800",
+<<<<<<< HEAD
           shell: "bg-gradient-to-br from-sky-50 via-white to-white border-sky-200 shadow-[0_18px_50px_rgba(59,130,246,0.12)]",
           accent: "bg-sky-500",
           rail: "from-sky-500 via-indigo-400 to-violet-400",
@@ -367,10 +437,16 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
           subtitle: "AI Trip Optimizer & Budget Planner",
           mission: "Map the trip before the booking.",
           chip: "text-sky-700 bg-sky-100 border-sky-200"
+=======
+          icon: <Compass className="w-4 h-4 text-blue-600 shrink-0 animate-spin" style={{ animationDuration: "12s" }} />,
+          title: "Safar Strategist ✈️",
+          subtitle: "AI Trip Optimizer & Budget Planner"
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
         };
       default:
         return {
           banner: "bg-slate-50 border-slate-200 text-slate-800",
+<<<<<<< HEAD
           shell: "bg-gradient-to-br from-slate-50 via-white to-white border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,0.08)]",
           accent: "bg-slate-500",
           rail: "from-slate-500 via-slate-400 to-slate-300",
@@ -379,6 +455,11 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
           subtitle: "Multi-Agent Router Core",
           mission: "Route the question to the right specialist.",
           chip: "text-slate-700 bg-slate-100 border-slate-200"
+=======
+          icon: <Sparkles className="w-4 h-4 text-bimb-red shrink-0" />,
+          title: "The Orchestrator 🧠",
+          subtitle: "Multi-Agent Router Cop"
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
         };
     }
   };
@@ -401,6 +482,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
         </div>
       </div>
 
+<<<<<<< HEAD
       <input
         ref={fileInputRef}
         type="file"
@@ -419,6 +501,8 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
         }}
       />
 
+=======
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
       {/* Suggestion Bubbles */}
       <div className="flex gap-2 pb-3 overflow-x-auto shrink-0 no-scrollbar">
         {QUICK_PROMPTS.map((qp, i) => (
@@ -433,7 +517,11 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
       </div>
 
       {/* Messages Feed */}
+<<<<<<< HEAD
       <div className="flex-1 overflow-y-auto space-y-3.5 pr-1.5 mb-3 select-auto">
+=======
+      <div className="flex-1 overflow-y-auto space-y-3.5 pr-1.5 mb-3 select-none">
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
         {chatbotMessages.map((msg) => {
           const isBot = msg.sender === "bot";
           const agentConfig = isBot ? getAgentStyles(msg.agent) : null;
@@ -448,6 +536,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
                 <span className="text-[9px] font-semibold text-slate-400">
                   {isBot ? agentConfig?.title : "You"} • {msg.time}
                 </span>
+<<<<<<< HEAD
                 {isBot && msg.mode && (
                   <span className="text-[8px] uppercase font-black tracking-wide px-1.5 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500">
                     {msg.mode}
@@ -458,12 +547,15 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
                     {msg.confidence}% confidence
                   </span>
                 )}
+=======
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
               </div>
 
               {/* Msg Box */}
               <div
                 className={`p-3.5 rounded-2xl border text-xs leading-relaxed ${
                   isBot
+<<<<<<< HEAD
                     ? `${agentConfig?.shell || "bg-slate-50 border-slate-100 text-slate-800"} rounded-tl-xs`
                     : "bg-bimb-red border-bimb-darkred text-white rounded-tr-xs"
                 }`}
@@ -487,6 +579,12 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
                   </div>
                 )}
 
+=======
+                    ? "bg-slate-50 border-slate-100 text-slate-800 rounded-tl-xs"
+                    : "bg-bimb-red border-bimb-darkred text-white rounded-tr-xs"
+                }`}
+              >
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
                 {/* Visual Image component if any */}
                 {msg.image && (
                   <div className="mb-2 bg-slate-900 border border-slate-700 p-2 rounded-xl flex items-center justify-center gap-2">
@@ -495,6 +593,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
                   </div>
                 )}
                 
+<<<<<<< HEAD
                 {/* Only show plain text if no structured data */}
                 {!msg.structured && (
                   accountsState.elderlyMode ? (
@@ -880,10 +979,18 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
                       </div>
                     )}
                   </div>
+=======
+                {accountsState.elderlyMode ? (
+                  // Simple human friendly output translation
+                  <p className="text-sm font-semibold">{msg.text}</p>
+                ) : (
+                  <p>{msg.text}</p>
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
                 )}
 
                 {/* Sub-card active recommendations */}
                 {isBot && msg.tip && (
+<<<<<<< HEAD
                   <div className={`mt-2.5 rounded-xl border px-3 py-2 flex items-start gap-2 text-[10px] font-medium ${agentConfig?.banner || "border-slate-200 bg-white text-slate-500"}`}>
                     {msg.agent === "Shield" ? (
                       <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
@@ -922,10 +1029,24 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
                   </div>
                 )}
 
+=======
+                  <div className="mt-2.5 pt-2 border-t border-slate-200/50 flex items-start gap-1 text-[10px] text-slate-500 font-medium">
+                    {msg.agent === "Shield" ? (
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                    ) : (
+                      <CheckCircle className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+                    )}
+                    <span>{msg.tip}</span>
+                  </div>
+                )}
+
+                {/* Simulated Emergency Activation */}
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
                 {msg.actionNeeded && msg.actionDetails && (
                   <div className="mt-3 bg-slate-900 text-white p-3 rounded-xl border border-slate-800">
                     <div className="flex items-center gap-1.5 mb-1 text-[10px] text-bimb-gold font-bold uppercase tracking-wider">
                       <Heart className="w-3.5 h-3.5 animate-pulse" />
+<<<<<<< HEAD
                       {msg.actionDetails.type.replace(/_/g, " ")}
                     </div>
                     <p className="text-[10px] text-slate-300">{msg.actionDetails.message}</p>
@@ -934,6 +1055,16 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
                         Action requested
                       </span>
                       <span className="text-[9px] text-slate-400">Backend response ready for follow-up.</span>
+=======
+                      Musafir Emergency Active
+                    </div>
+                    <p className="text-[10px] text-slate-300">{msg.actionDetails.message}</p>
+                    <div className="mt-2 flex gap-1.5">
+                      <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold px-1.5 py-0.5 rounded">
+                        ✓ RM 100 Deposited
+                      </span>
+                      <span className="text-[9px] text-slate-400">Guardian Sarafina was alerted.</span>
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
                     </div>
                   </div>
                 )}
@@ -1051,6 +1182,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
         })}
         
         {isSending && (
+<<<<<<< HEAD
           <div className="self-start max-w-[92%] rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_16px_50px_rgba(15,23,42,0.08)] rounded-tl-xs">
             <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
               <div className="flex items-center gap-3">
@@ -1091,6 +1223,15 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
             <div className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-[10px] text-slate-500">
               {pendingQuery ? `Question: ${pendingQuery}` : "Waiting for the next message..."}
             </div>
+=======
+          <div className="self-start max-w-[85%] bg-slate-50 border border-slate-100 p-3 rounded-2xl rounded-tl-xs flex items-center gap-2">
+            <div className="flex space-x-1">
+              <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+            <span className="text-[10px] text-slate-400 font-medium italic">Routing query through NEURA Cognitive Agents...</span>
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
           </div>
         )}
 
@@ -1101,7 +1242,11 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
       <div className="mt-auto shrink-0 space-y-2">
         {selectedFileLabel && (
           <div className="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl flex items-center justify-between text-xs">
+<<<<<<< HEAD
             <span className="font-mono text-[10px] text-slate-600 font-bold">📄 Screenshot: {selectedFileLabel}</span>
+=======
+            <span className="font-mono text-[10px] text-slate-600 font-bold">📄 Screenshot: {selectedFileLabel} (Fake Whatsapp Alert)</span>
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
             <button
               onClick={() => {
                 setSelectedFileLabel(null);
@@ -1115,11 +1260,21 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
         )}
 
         <div className="flex gap-2">
+<<<<<<< HEAD
           <button
             onClick={() => {
               fileInputRef.current?.click();
             }}
             title="Attach screenshot or document"
+=======
+          {/* Mock attachment clip */}
+          <button
+            onClick={() => {
+              setSelectedFileLabel("whatsapp_scam.jpg");
+              setSelectedFileBase64(MOCK_FILES["lhdn_threat.jpg"]);
+            }}
+            title="Attach threat screenshot (Simulate Vision Scan)"
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
             className={`p-2.5 rounded-xl border flex items-center justify-center cursor-pointer transition-colors ${selectedFileLabel ? "bg-amber-50 border-amber-200 text-amber-600" : "bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-800"}`}
           >
             <Paperclip className="w-4 h-4" />

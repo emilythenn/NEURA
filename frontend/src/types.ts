@@ -81,6 +81,7 @@ export interface ChatMessage {
     message: string;
   };
   image?: string;
+<<<<<<< HEAD
   // Extended optional properties used by AgentChatbot
   mode?: string;
   confidence?: number;
@@ -98,6 +99,8 @@ export interface ChatEvidenceItem {
 export interface ChatSource {
   title: string;
   note?: string;
+=======
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
 }
 
 export interface ProductScanResult {
@@ -107,17 +110,24 @@ export interface ProductScanResult {
     storePrice: number;
     onlinePrice: number;
     onlineSourceName: string;
+<<<<<<< HEAD
     onlineSourceUrl?: string;
     category: string;
     halalStatus: string;
     shariahAudit: string;
     marketplaceComparisons?: { platform: string; price: number; url?: string }[];
+=======
+    category: string;
+    halalStatus: string;
+    shariahAudit: string;
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
   };
   savings: number;
   budgetImpact: {
     remaining: number;
     message: string;
     color: string;
+<<<<<<< HEAD
     level?: string;
     category?: string;
   };
@@ -132,4 +142,9 @@ export interface ProductScanResult {
     canDelayLock?: boolean;
     canProceedSafely?: boolean;
   };
+=======
+  };
+  timeValueHours: number;
+  coolingSeconds: number;
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
 }

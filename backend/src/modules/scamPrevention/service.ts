@@ -13,6 +13,7 @@ import {
   getLinkedSuspiciousAccount
 } from "./firestore";
 
+<<<<<<< HEAD
 // Re-export some firestore helpers with stable names used by other modules
 import { createQuarantineTransfer } from "./firestore";
 
@@ -51,6 +52,8 @@ export async function createQuarantine(data: {
   return record;
 }
 
+=======
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
 let geminiAI: GoogleGenAI | null = null;
 export function setGeminiAI(client: GoogleGenAI | null) {
   geminiAI = client;
@@ -96,7 +99,11 @@ Generate bilingual warnings in JSON:
       config: { responseMimeType: "application/json" }
     });
 
+<<<<<<< HEAD
     if (response && response.text) {
+=======
+    if (response?.text) {
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
       const parsed = JSON.parse(response.text);
       return {
         en: parsed.en || "WARNING: High-risk transfer.",
@@ -230,4 +237,8 @@ export async function evaluateTransferRisk(ctx: {
     requiresVerification: riskLevel !== "GREEN",
     blacklistMatch
   };
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
