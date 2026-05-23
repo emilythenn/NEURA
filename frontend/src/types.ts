@@ -79,6 +79,11 @@ export interface ChatMessage {
   text: string;
   agent?: "Orchestrator" | "Shield" | "Mizan" | "Barakah" | "Ehsan" | "Safar";
   tip?: string;
+  mode?: string;
+  confidence?: number;
+  reasoning?: string;
+  evidence?: ChatEvidenceItem[];
+  sources?: ChatSourceItem[];
   time: string;
   actionNeeded?: boolean;
   actionDetails?: {
@@ -86,6 +91,78 @@ export interface ChatMessage {
     message: string;
   };
   image?: string;
+  structured?: ChatStructuredPayload;
+}
+
+export interface ChatStructuredPayload {
+  payment?: unknown;
+  complianceStatus?: string;
+  decisionStatus?: string;
+  financialSummary?: Record<string, string | number>;
+  aiAnalysis?: Record<string, string | number>;
+  recommendation?: {
+    suggestedAction?: string;
+    alternative?: string;
+  };
+  askFurther?: string[];
+  securityResult?: string;
+  riskScore?: number;
+  threatAnalysis?: {
+    detectedSignals?: string[];
+    why?: string;
+  };
+  recommendedActions?: string[];
+  saferAlternative?: string;
+  halalStructured?: ChatHalalStructured;
+  shariahAssessment?: string[] | string;
+  explanation?: string;
+  zakatStructured?: {
+    nisabThreshold?: {
+      amount?: string;
+      value?: string | number;
+    };
+    haulPeriod?: {
+      duration?: string;
+      days?: string;
+      requirement?: string;
+    };
+    zakatRate?: string;
+    calculation?: {
+      formula?: string;
+      example: {
+        assetHeld?: string | number;
+        unitPrice?: string;
+        totalValue?: string | number;
+        zakatDue?: string | number;
+      };
+    };
+    suggestedActions?: string[];
+    eligibleCategories?: string[];
+  };
+}
+
+export interface ChatEvidenceItem {
+  label: string;
+  value: string;
+}
+
+export interface ChatSourceItem {
+  title: string;
+  note: string;
+}
+
+export interface ChatHalalChecklistItem {
+  category: string;
+  status: string;
+  description: string;
+}
+
+export interface ChatHalalStructured {
+  verdict?: string;
+  riskLevel?: "High" | "Medium" | "Low" | string;
+  checklist?: ChatHalalChecklistItem[];
+  guidingPrinciples?: string[];
+  suggestedActions?: string[];
 }
 
 export interface ProductScanResult {
