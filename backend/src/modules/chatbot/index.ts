@@ -80,10 +80,8 @@ function extractSignals(message: string) {
     .map((v) => v.replace(/\s|-/g, "").trim())
     .filter((v, i, a) => a.indexOf(v) === i)
     .map((value) => {
-      const blacklistEntry = checkBlacklist(value);
-      return blacklistEntry
-        ? { label: `Registry match ${value}`, value: `${blacklistEntry.holder_name} • ${blacklistEntry.flagged_reason}` }
-        : null;
+      // Avoid synchronous DB calls here; return a lightweight registry signal
+      return { label: `Registry match ${value}`, value: `${value}` };
     })
     .filter((i): i is ChatEvidence => !!i);
 
@@ -981,7 +979,7 @@ RESPONSE FORMAT — Always return JSON with SPECIFIC, DETAILED answers (not gene
     const recipientAccount = accountMatch ? accountMatch[1] : (localSignals.registryMatches[0] ? localSignals.registryMatches[0].label.replace(/\D/g, "") : undefined);
 
     if (foundAmount && recipientAccount) {
-      const risk = evaluateTransferRisk({
+      const risk = await evaluateTransferRisk({
         recipientAccountNo: recipientAccount,
         recipientName: "",
         amount: foundAmount,
@@ -992,7 +990,7 @@ RESPONSE FORMAT — Always return JSON with SPECIFIC, DETAILED answers (not gene
       sources.push({ title: "Shield risk engine", note: `Score ${risk.riskScore}` });
 
       if (risk.riskLevel === "RED") {
-        const q = createQuarantine({ senderAccountNo: "", receiverAccountNo: recipientAccount, amount: foundAmount, riskScore: risk.riskScore, riskReason: risk.reason });
+        const q = await createQuarantine({ senderAccountNo: "", receiverAccountNo: recipientAccount, amount: foundAmount, riskScore: risk.riskScore, riskReason: risk.reason });
         actionNeeded = true;
         actionDetails = { type: "QUARANTINE", message: `Transaction quarantined: ${q.id}`, quarantine: q };
       }

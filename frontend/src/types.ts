@@ -81,6 +81,23 @@ export interface ChatMessage {
     message: string;
   };
   image?: string;
+  // Extended optional properties used by AgentChatbot
+  mode?: string;
+  confidence?: number;
+  reasoning?: string;
+  evidence?: ChatEvidenceItem[];
+  sources?: ChatSource[];
+  structured?: any;
+}
+
+export interface ChatEvidenceItem {
+  label: string;
+  value: string;
+}
+
+export interface ChatSource {
+  title: string;
+  note?: string;
 }
 
 export interface ProductScanResult {
@@ -90,16 +107,29 @@ export interface ProductScanResult {
     storePrice: number;
     onlinePrice: number;
     onlineSourceName: string;
+    onlineSourceUrl?: string;
     category: string;
     halalStatus: string;
     shariahAudit: string;
+    marketplaceComparisons?: { platform: string; price: number; url?: string }[];
   };
   savings: number;
   budgetImpact: {
     remaining: number;
     message: string;
     color: string;
+    level?: string;
+    category?: string;
   };
   timeValueHours: number;
   coolingSeconds: number;
+  detectedLabel?: string;
+  verdict?: { status?: string };
+  shariahShield?: { status?: string; message?: string };
+  bottomSheetActions?: {
+    canSaveDifference?: boolean;
+    suggestedTransferAmount?: number;
+    canDelayLock?: boolean;
+    canProceedSafely?: boolean;
+  };
 }

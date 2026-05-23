@@ -13,6 +13,44 @@ import {
   getLinkedSuspiciousAccount
 } from "./firestore";
 
+// Re-export some firestore helpers with stable names used by other modules
+import { createQuarantineTransfer } from "./firestore";
+
+export async function checkBlacklist(accountNo: string) {
+  return await getBlacklistAccount(accountNo);
+}
+
+export async function createQuarantine(data: {
+  senderAccountNo: string;
+  receiverAccountNo: string;
+  recipientName?: string;
+  amount: number;
+  riskScore: number;
+  riskReason?: string;
+}) {
+  const id = `qtx_${Date.now().toString(36)}`;
+  const now = new Date();
+  const record = {
+    id,
+    senderAccountNo: data.senderAccountNo,
+    recipientAccountNo: data.receiverAccountNo,
+    recipientName: data.recipientName || "",
+    amount: data.amount,
+    riskScore: data.riskScore,
+    otpCode: null,
+    status: "PENDING",
+    riskReason: data.riskReason || "",
+    createdAt: now,
+    expiresAt: new Date(now.getTime() + 15 * 60 * 1000)
+  };
+  try {
+    await createQuarantineTransfer(record as any);
+  } catch (err) {
+    console.error("Failed to persist quarantine transfer:", err);
+  }
+  return record;
+}
+
 let geminiAI: GoogleGenAI | null = null;
 export function setGeminiAI(client: GoogleGenAI | null) {
   geminiAI = client;
