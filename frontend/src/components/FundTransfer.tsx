@@ -690,29 +690,29 @@ const handleAuthorizeTransfer = async () => {
               <span className="text-[11px] font-bold text-bimb-red cursor-pointer hover:underline">View All</span>
             </div>
             {/* horizontal list of favorites with DuitNow styling */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
               {FAVORITES.map((fav, i) => (
                 <button
                   key={i}
                   onClick={() => handleSelectFavorite(fav)}
-                  className={`p-3 border rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer hover:border-bimb-red transition-all ${fav.style}`}
+                  className={`p-2 sm:p-3 border rounded-xl sm:rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer hover:border-bimb-red transition-all ${fav.style}`}
                 >
-                  <span className="text-2xl mb-1">{fav.avatar}</span>
-                  <div className="flex items-center gap-1.5 justify-center">
-                    <span className="text-[11px] font-black text-slate-800 line-clamp-1">{fav.name.split(" ")[0]}</span>
+                  <span className="text-xl sm:text-2xl mb-1">{fav.avatar}</span>
+                  <div className="flex items-center gap-1 sm:gap-1.5 justify-center">
+                    <span className="text-[10px] sm:text-[11px] font-black text-slate-800 line-clamp-1">{fav.name.split(" ")[0]}</span>
                     {fav.name.includes("DuitNow") && (
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#d31145] shrink-0" title="DuitNow Registered"></span>
+                      <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#d31145] shrink-0" title="DuitNow Registered"></span>
                     )}
                   </div>
-                  <span className="text-[8px] font-bold text-slate-400 font-mono mt-0.5 uppercase">{fav.bank}</span>
+                  <span className="text-[7px] sm:text-[8px] font-bold text-slate-400 font-mono mt-0.5 uppercase hidden sm:block">{fav.bank}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="pt-2 border-t border-slate-100">
-            <span className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5">Choose Transfer Method</span>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 font-sans">
+          <div className="pt-2 sm:pt-3 border-t border-slate-100">
+            <span className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2 sm:mb-2.5">Choose Transfer Method</span>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 font-sans">
               {[
                 { name: "Account", icon: <User className="w-5 h-5" /> },
                 { name: "Mobile Number", icon: <Smartphone className="w-5 h-5" /> },
@@ -724,10 +724,10 @@ const handleAuthorizeTransfer = async () => {
                 <button
                   key={chan.name}
                   onClick={() => handleSelectChannel(chan.name)}
-                  className="p-3 bg-slate-50 hover:bg-rose-50/40 border border-slate-100 hover:border-bimb-red rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer transition-colors"
+                  className="p-2 sm:p-3 bg-slate-50 hover:bg-rose-50/40 border border-slate-100 hover:border-bimb-red rounded-xl sm:rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer transition-colors"
                 >
-                  <div className="text-bimb-red mb-1.5">{chan.icon}</div>
-                  <span className="text-[11px] font-bold text-slate-800 leading-tight">{chan.name}</span>
+                  <div className="text-bimb-red mb-1 sm:mb-1.5 text-4 sm:text-5">{chan.icon}</div>
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 leading-tight">{chan.name}</span>
                 </button>
               ))}
             </div>
@@ -1506,40 +1506,40 @@ const handleAuthorizeTransfer = async () => {
 
       {/* CAREGIVER OTP VERIFICATION MODAL - SIMPLE UI */}
       {caregiverApprovalWait && (
-        <div id="caregiver-otp-gate" className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2rem] max-w-md w-full border border-rose-100 shadow-2xl relative overflow-hidden text-slate-800 animate-fade-in select-none">
+        <div id="caregiver-otp-gate" className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-[1.5rem] sm:rounded-[2rem] max-w-md w-full border border-rose-100 shadow-2xl relative overflow-hidden text-slate-800 animate-fade-in select-none max-h-[90vh] overflow-y-auto">
             {/* Top accent bar */}
             <div className="h-2 bg-[#d31145] w-full" />
             
-            <div className="p-6 space-y-5">
+            <div className="p-4 sm:p-6 space-y-3.5 sm:space-y-5">
               {/* Header */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-rose-50 border border-rose-100 rounded-full flex items-center justify-center text-bimb-red">
-                  <Heart className="w-5 h-5 text-[#d31145] fill-[#d31145]" />
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-rose-50 border border-rose-100 rounded-full flex items-center justify-center text-bimb-red shrink-0">
+                  <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-[#d31145] fill-[#d31145]" />
                 </div>
-                <div>
-                  <span className="text-[8px] font-mono font-black text-[#d31145] bg-rose-50 px-2 py-0.5 rounded-md uppercase tracking-wider block w-max">
+                <div className="min-w-0">
+                  <span className="text-[7px] sm:text-[8px] font-mono font-black text-[#d31145] bg-rose-50 px-2 py-0.5 rounded-md uppercase tracking-wider block w-max">
                     Caregiver Verification
                   </span>
-                  <h3 className="font-display font-black text-sm text-slate-900">
+                  <h3 className="font-display font-black text-xs sm:text-sm text-slate-900 truncate">
                     Confirm Transfer Request
                   </h3>
                 </div>
               </div>
 
               {/* Info Box */}
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2">
-                <p className="text-xs text-slate-600 leading-relaxed">
+              <div className="bg-slate-50 border border-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 space-y-1.5 sm:space-y-2">
+                <p className="text-[12px] sm:text-xs text-slate-600 leading-relaxed">
                   This transfer of <span className="font-bold text-slate-900">RM {parseFloat(form.amount || "0").toFixed(2)}</span> exceeds your daily safety limit of <span className="font-bold text-rose-600">RM {accountsState.elderlyLimit.toFixed(2)}</span>.
                 </p>
-                <p className="text-xs text-slate-600">
+                <p className="text-[12px] sm:text-xs text-slate-600">
                   Enter the OTP code your caregiver <strong>{accountsState.caregiverName}</strong> received via SMS to approve this transfer.
                 </p>
               </div>
 
               {/* OTP Input */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-700 block">Enter 6-Digit OTP Code</label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <label className="text-[11px] sm:text-xs font-semibold text-slate-700 block">Enter 6-Digit OTP Code</label>
                 <input
                   type="text"
                   value={caregiverOtpInput}
@@ -1549,21 +1549,18 @@ const handleAuthorizeTransfer = async () => {
                     setCaregiverOtpError("");
                   }}
                   placeholder="000000"
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-rose-500 rounded-lg px-3 py-2.5 text-sm font-mono outline-none text-center tracking-widest font-bold"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-rose-500 rounded-lg px-3 py-2 sm:py-2.5 text-sm font-mono outline-none text-center tracking-widest font-bold"
                   maxLength={6}
                 />
-                <p className="text-[9px] text-slate-400 mt-2">
-                  <strong>Demo Success:</strong> {getSuccessCodes()[0]} | <strong>Demo Fail:</strong> {getFailureCodes()[0]}
-                </p>
               </div>
 
               {/* Error Message */}
               {caregiverOtpError && (
-                <p className="text-xs text-rose-600 font-bold bg-rose-50 p-2.5 rounded-lg border border-rose-200">{caregiverOtpError}</p>
+                <p className="text-[11px] sm:text-xs text-rose-600 font-bold bg-rose-50 p-2 sm:p-2.5 rounded-lg border border-rose-200">{caregiverOtpError}</p>
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-2.5 sm:gap-3 pt-1 sm:pt-2">
                 <button
                   onClick={() => {
                     setCaregiverApprovalWait(false);
@@ -1571,13 +1568,13 @@ const handleAuthorizeTransfer = async () => {
                     setCaregiverOtpError("");
                     setIsCanceledBySafety(true);
                   }}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-bold cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCaregiveVerifyOtp}
-                  className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                  className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-bold cursor-pointer transition-colors"
                 >
                   Verify OTP
                 </button>
