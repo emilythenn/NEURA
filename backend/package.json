@@ -6,7 +6,7 @@
   "main": "dist/index.cjs",
   "scripts": {
     "dev": "tsx watch --ignore '../frontend' src/index.ts",
-    "build": "esbuild src/index.ts --bundle --outfile=dist/index.cjs --platform=node --format=cjs --external:vite",
+    "build": "esbuild src/index.ts --bundle --outfile=dist/index.cjs --platform=node --format=cjs --external:vite --external:dotenv",
     "start": "node dist/index.cjs",
     "type-check": "tsc --noEmit"
   },
@@ -17,6 +17,7 @@
     "aws-lambda": "^1.0.7",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "zod": "^3.21.4",
     "firebase-admin": "^13.10.0"
   },
   "devDependencies": {

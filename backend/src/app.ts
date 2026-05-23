@@ -5,10 +5,8 @@ import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import fs from "fs";
 import { initializeApp, cert } from "firebase-admin/app";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Use process.cwd() instead of import.meta to remain compatible with CJS bundles
+const __dirname = path.resolve(process.cwd(), "src");
 
 import { router as scamPreventionRouter, setGeminiAI, router as caregiverOTPRouter } from "./modules/scamPrevention";
 import { createRealityLensRouter, setRealityLensGeminiAI } from "./modules/realityLens";
@@ -30,7 +28,7 @@ import wishlistRoutes from "./modules/predictionAnalysis/wishlist/wishlist.route
 import chatbotRoutes  from "./modules/predictionAnalysis/chatbot/chatbot.routes";
 
 dotenv.config({
-  path: path.join(__dirname, "..", ".env"),
+  path: path.join(process.cwd(), ".env"),
 });
 
 // Optional Firebase Admin SDK initialization
@@ -294,5 +292,17 @@ export async function startServer() {
     console.log(`NEURA Cognitive Banking Engine booted successfully on port ${PORT}`);
   });
 }
+
+// Error logging middleware (helpful during development to surface stack traces)
+app.use((err: any, req: any, res: any, next: any) => {
+  try {
+    console.error("[SERVER ERROR]", err && err.stack ? err.stack : err);
+  } catch (e) {
+    console.error("[SERVER ERROR] (failed to stringify error)", e);
+  }
+  if (!res.headersSent) {
+    res.status(500).send((err && err.message) || String(err) || "Internal Server Error");
+  }
+});
 
 export { app, PORT };
