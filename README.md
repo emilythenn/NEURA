@@ -43,20 +43,6 @@ System architecture (simplified)
 User → Frontend (React) → Backend (Express + Orchestrator + RealityLens) → Firestore
                                                                ↳ Gemini (Google GenAI)
 
-Project structure (important files)
-----------------------------------
-- frontend/
-  - src/components/RealityLens.tsx
-  - src/App.tsx
-  - src/types.ts
-
-- backend/
-  - src/app.ts
-  - src/modules/realityLens/service.ts
-  - src/modules/realityLens/router.ts
-  - src/modules/predictionAnalysis/state/state.service.ts
-  - src/modules/predictionAnalysis/tracker/tracker.service.ts
-  - src/config/firebase.ts
 
 Tech stack
 ----------
@@ -111,32 +97,6 @@ PORT=3000
 Notes
 - The frontend Vite dev server proxies `/api` to the backend (default 3000). See `frontend/vite.config.ts`.
 - If `GEMINI_API_KEY` is not present the backend falls back to a conservative demo response so UI remains usable.
-
-Expected Reality Lens output (example)
--------------------------------------
-Value Card
-- Store Price: RM 149.90
-- Online (fallback estimate): RM 132.00
-- Platform proof: Lazada RM 135.00, Shopee RM 129.00
-- You save: RM 17.90
-
-Impact Card
-- Category: General
-- Impact: LOW (≈19% of Wants budget)
-
-Shariah Shield
-- Review complete — Fast fallback used while the live vision model was taking too long.
-
-Troubleshooting
----------------
-- 404s from frontend `/api` calls: ensure backend is running and proxy is configured.
-- Gemini errors (400/invalid image): check backend logs; fallback will be used if Gemini rejects input.
-
-Next steps & improvements
--------------------------
-- Replace `window.confirm()` with a custom confirmation modal and an Undo action.
-- Add server-side marketplace verification (headless checks) to validate Gemini marketplace URLs.
-- Add unit/integration tests for investScanSavings and scan JSON parsing.
 
 Contributing
 ------------
