@@ -274,13 +274,23 @@ export default function PredictiveLayerPage({ onNavigateToTracker, onNavigateToW
   const [discretionaryBudget, setDiscretionaryBudget] = useState<number>(0);
   const [intercept,        setIntercept]        = useState<InterceptState>({ loading: null, message: null, intent: null });
 
-  // Fetch live balance from backend on mount
+  // Fetch live balance from tracker data (same source as Tracker page)
   useEffect(() => {
-    fetch("/api/state")
-      .then(r => r.json())
-      .then(d => {
-        setTotalBalance(d.totalBalance ?? 0);
-        setDiscretionaryBudget(d.discretionaryBudget ?? 0);
+    const FIXED = new Set(["Bills & Utilities", "Transportation", "Savings", "Investments"]);
+    Promise.all([
+      fetch("/api/tracker/incomes").then(r => r.json()),
+      fetch("/api/tracker/expenses").then(r => r.json()),
+    ])
+      .then(([incData, expData]) => {
+        const incomes:  { amount: number }[] = incData.data  ?? [];
+        const expenses: { amount: number; category: string }[] = expData.data ?? [];
+        const totalIncome   = incomes.reduce((s, i) => s + i.amount, 0);
+        const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+        const fixedExpenses = expenses
+          .filter(e => FIXED.has(e.category))
+          .reduce((s, e) => s + e.amount, 0);
+        setTotalBalance(totalIncome - totalExpenses);
+        setDiscretionaryBudget(Math.max(0, totalIncome - fixedExpenses));
       })
       .catch(e => console.error("Failed to fetch balance for predictor:", e));
   }, []);

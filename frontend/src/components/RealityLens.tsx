@@ -207,8 +207,8 @@ export default function RealityLens({ accountsState, onRefreshData, onPostStatus
   return (
     <div id="multimodal-reality-lens-section" className="space-y-4">
       <div className="rounded-[28px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(211,17,69,0.08),_transparent_34%),linear-gradient(180deg,_#ffffff,_#fbfdff_58%,_#f8fafc)] text-slate-900 shadow-[0_24px_80px_rgba(15,23,42,0.08)] overflow-hidden">
-        <div className="p-5 sm:p-6 flex flex-col gap-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="p-4 sm:p-5 lg:p-6 flex flex-col gap-4 sm:gap-5">
+          <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-2 max-w-2xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600 shadow-sm">
                 <ScanSearch className="h-3.5 w-3.5 text-[#d31145]" />
@@ -217,34 +217,34 @@ export default function RealityLens({ accountsState, onRefreshData, onPostStatus
                 {liveHint}
               </div>
               <div>
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-950">
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-slate-950">
                   {accountsState.elderlyMode ? "Amanah Reality Lens" : "Multimodal Reality Lens"}
                 </h2>
-                <p className="mt-1 max-w-xl text-sm text-slate-600">
-                  Point the camera at a product, price tag, or flyer. SmartScan reads the object, estimates store price, compares market value, and shows affordability and Shariah guidance on the live camera feed.
+                <p className="mt-1 max-w-xl text-xs sm:text-sm text-slate-600">
+                  Point the camera at a product, price tag, or flyer. SmartScan reads the object, estimates store price, compares market value, and shows affordability and Shariah guidance.
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 sm:min-w-[290px]">
-              <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 backdrop-blur-xl shadow-sm">
-                <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Detected</div>
-                <div className="mt-1 text-sm font-bold text-slate-950">{scanResult?.details.name || "Ready"}</div>
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 sm:min-w-[290px]">
+              <div className="rounded-2xl border border-slate-200 bg-white px-2 py-2 sm:px-3 sm:py-3 backdrop-blur-xl shadow-sm">
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] text-slate-500">Detected</div>
+                <div className="mt-1 text-xs sm:text-sm font-bold text-slate-950 truncate">{scanResult?.details.name || "Ready"}</div>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 backdrop-blur-xl shadow-sm">
-                <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Status</div>
-                <div className="mt-1 text-sm font-bold text-slate-950">{topBadge}</div>
+              <div className="rounded-2xl border border-slate-200 bg-white px-2 py-2 sm:px-3 sm:py-3 backdrop-blur-xl shadow-sm">
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] text-slate-500">Status</div>
+                <div className="mt-1 text-xs sm:text-sm font-bold text-slate-950 truncate">{topBadge}</div>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 backdrop-blur-xl shadow-sm">
-                <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Budget</div>
-                <div className="mt-1 text-sm font-bold text-slate-950">RM {accountsState.discretionaryBudget.toFixed(2)}</div>
+              <div className="rounded-2xl border border-slate-200 bg-white px-2 py-2 sm:px-3 sm:py-3 backdrop-blur-xl shadow-sm">
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] text-slate-500">Budget</div>
+                <div className="mt-1 text-xs sm:text-sm font-bold text-slate-950">RM {accountsState.discretionaryBudget.toFixed(2)}</div>
               </div>
             </div>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[1.8fr_1fr]">
             <div className="space-y-4">
-              <div className="relative min-h-[620px] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_18px_70px_rgba(15,23,42,0.08)]">
+              <div className="relative min-h-[220px] sm:min-h-[380px] lg:min-h-[560px] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_18px_70px_rgba(15,23,42,0.08)]">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(211,17,69,0.08),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,1),_rgba(248,250,252,0.72),_rgba(241,245,249,0.92))]" />
                 <div className={`absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.05)_1px,transparent_1px)] bg-[size:34px_34px] opacity-40 ${isScanning ? "animate-pulse" : ""}`} />
 
@@ -264,7 +264,7 @@ export default function RealityLens({ accountsState, onRefreshData, onPostStatus
                         <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                           <div className="h-full w-2/3 animate-pulse rounded-full bg-gradient-to-r from-[#d31145] via-[#f9bf15] to-emerald-500" />
                         </div>
-                        <div className="grid gap-2 sm:grid-cols-3">
+                        <div className="grid gap-2 grid-cols-1 sm:grid-cols-3">
                           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
                             Detecting item details
                           </div>
@@ -303,13 +303,13 @@ export default function RealityLens({ accountsState, onRefreshData, onPostStatus
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex flex-col items-center justify-center gap-4 px-6 text-center">
-                      <div className="flex h-28 w-28 items-center justify-center rounded-full border border-slate-200 bg-white shadow-2xl backdrop-blur-xl">
-                        <Camera className="h-12 w-12 text-[#d31145]" />
+                    <div className="flex flex-col items-center justify-center gap-3 px-6 text-center">
+                      <div className="flex h-16 w-16 sm:h-28 sm:w-28 items-center justify-center rounded-full border border-slate-200 bg-white shadow-2xl backdrop-blur-xl">
+                        <Camera className="h-8 w-8 sm:h-12 sm:w-12 text-[#d31145]" />
                       </div>
                       <div>
-                        <div className="text-base font-semibold text-slate-950">Tap Open Camera to start scanning</div>
-                        <div className="mt-1 text-sm text-slate-500">
+                        <div className="text-sm sm:text-base font-semibold text-slate-950">Tap Open Camera to start scanning</div>
+                        <div className="mt-1 text-xs sm:text-sm text-slate-500">
                           Live scan will use your device camera and show results immediately below.
                         </div>
                       </div>
@@ -468,7 +468,7 @@ export default function RealityLens({ accountsState, onRefreshData, onPostStatus
           </div>
 
           {scanResult && (
-            <div className="grid gap-4 rounded-[28px] border border-slate-200 bg-white p-5 text-slate-900 backdrop-blur-xl shadow-sm lg:grid-cols-[1fr_1.1fr]">
+            <div className="grid gap-4 rounded-[28px] border border-slate-200 bg-white p-4 sm:p-5 text-slate-900 backdrop-blur-xl shadow-sm lg:grid-cols-[1fr_1.1fr]">
               <div>
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-slate-500">
                   <Zap className="h-4 w-4 text-[#d31145]" />

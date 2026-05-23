@@ -388,7 +388,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
   };
 
   return (
-    <div id="ai-orchestrator-chatbot" className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col h-[520px]">
+    <div id="ai-orchestrator-chatbot" className="bg-white rounded-3xl p-3 sm:p-5 border border-slate-100 shadow-sm flex flex-col h-[calc(100svh-160px)] sm:h-[560px] max-h-[700px]">
       
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-slate-100 pb-3 mb-3 shrink-0">
@@ -477,15 +477,15 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
                   <div className="mb-3 overflow-hidden rounded-[20px] border border-black/5 bg-white/80">
                     <div className={`h-1.5 w-full bg-gradient-to-r ${agentConfig.rail}`} />
                     <div className="flex items-start justify-between gap-3 px-3 py-3">
-                      <div className="flex items-start gap-2.5">
-                        <div className={`mt-0.5 h-3.5 w-3.5 rounded-full ${agentConfig.accent} shadow-lg`} />
-                        <div>
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <div className={`mt-0.5 h-3.5 w-3.5 rounded-full shrink-0 ${agentConfig.accent} shadow-lg`} />
+                        <div className="min-w-0">
                           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Specialist response</p>
                           <p className="mt-0.5 text-[12px] font-semibold text-slate-900">{agentConfig.title}</p>
-                          <p className="mt-1 max-w-[220px] text-[10px] leading-relaxed text-slate-500">{agentConfig.mission}</p>
+                          <p className="mt-1 text-[10px] leading-relaxed text-slate-500">{agentConfig.mission}</p>
                         </div>
                       </div>
-                      <span className={`rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-wider ${agentConfig.chip}`}>
+                      <span className={`rounded-full border px-2 py-0.5 text-[8px] sm:px-2.5 sm:py-1 sm:text-[9px] font-black uppercase tracking-wider shrink-0 self-start ${agentConfig.chip}`}>
                         {agentConfig.subtitle}
                       </span>
                     </div>
@@ -1072,7 +1072,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
               </div>
             </div>
 
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="mt-3 grid gap-2 grid-cols-1 sm:grid-cols-2">
               {loadingStages.map((stage, index) => {
                 const active = index === loadingStageIndex;
                 return (
