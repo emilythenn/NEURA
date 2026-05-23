@@ -5,10 +5,6 @@ import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import fs from "fs";
 import { initializeApp, cert } from "firebase-admin/app";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 import { router as scamPreventionRouter, setGeminiAI, router as caregiverOTPRouter } from "./modules/scamPrevention";
 import { createRealityLensRouter, setRealityLensGeminiAI } from "./modules/realityLens";
@@ -19,7 +15,7 @@ import { checkBlacklist } from "./modules/scamPrevention/service";
 import { getDb, COLLECTIONS } from "./config/firebase";
 
 dotenv.config({
-  path: path.join(__dirname, "..", ".env"),
+  path: path.join(process.cwd(), ".env"),
 });
 
 const serviceAccountKeyPath = path.join(process.cwd(), "firebase-service-account.json");

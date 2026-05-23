@@ -27,7 +27,7 @@ function buildMarketplaceUrl(platform: "Lazada" | "Shopee", productName: string)
 }
 
 function buildFallbackScanResponse(state: RealityLensState, req: RealityLensScanRequest, reason: string): RealityLensScanResponse {
-  const productName = normalizeLabel(req.label || req.attachmentLabel || "Detected item") || "detected item";
+  const productName = normalizeLabel(req.label || req.attachmentLabel || "Default scan result") || "default scan result";
   const storePrice = Number(req.overridePrice || 149.9);
   const onlinePrice = Math.max(1, Math.round(storePrice * 0.88));
   const savings = Math.max(0, storePrice - onlinePrice);
@@ -43,11 +43,11 @@ function buildFallbackScanResponse(state: RealityLensState, req: RealityLensScan
       name: productName,
       storePrice,
       onlinePrice,
-      onlineSourceName: "Fallback market estimate",
+      onlineSourceName: "Default market estimate",
       onlineSourceUrl: buildMarketplaceUrl("Lazada", productName),
       category: "General",
       halalStatus: "Review manually",
-      shariahAudit: `Fast fallback used because the live vision scan was slow (${reason}).`,
+      shariahAudit: `Default scan response used because the live vision scan was unavailable (${reason}).`,
       marketplaceComparisons: defaultMarketplaceComparisons(productName, onlinePrice),
     },
     verdict: {
@@ -70,8 +70,8 @@ function buildFallbackScanResponse(state: RealityLensState, req: RealityLensScan
       statement: `This purchase equals about ${Math.max(1, Math.round(storePrice / 25))} hours of work at RM 25/hour.`,
     },
     shariahShield: {
-      status: "Review complete",
-      message: "Fast fallback used while the live vision model was taking too long.",
+      status: "Default response",
+      message: "Live scan was unavailable, so the system returned a default result.",
       safeToProceed: true,
     },
     bottomSheetActions: {
@@ -123,6 +123,9 @@ export async function scanRealityLens(
   const hourlyRate = req.hourlyRate && req.hourlyRate > 0 ? req.hourlyRate : 25;
   const prompt = `You are SmartScan AI for a banking app.
 Analyze the shopping image and return STRICT JSON only.
+Your job is to identify the actual item and estimate a conservative, generic market price.
+Do not invent a premium brand, sport edition, bundle, or luxury version unless it is clearly visible in the image.
+If the item is common and unbranded, prefer the lowest normal retail price range from everyday local marketplace listings.
 
 Required fields:
 {
@@ -168,8 +171,11 @@ Required fields:
 
 Rules:
 - Use storePrice and onlinePrice as positive numbers.
+- Estimate the normal market price for the exact visible item, not a premium variant.
+- For common unbranded items like water bottles, mugs, lunch boxes, pens, or basic household goods, stay conservative and use a generic market estimate rather than a branded premium estimate.
+- If the item appears to be a generic bottle or drinkware, do not price it like a sports, insulated, smart, or branded bottle unless those features are visible.
 - Include a real platform proof URL in onlineSourceUrl and two marketplace comparisons with platform, price, and url.
-- If price is missing, estimate conservatively.
+- If price is missing, estimate conservatively from everyday marketplace listings.
 - If the item is a suspicious investment flyer, set verdict.status to EXPENSIVE, category to Investment, and shariahShield.safeToProceed to false.
 - Keep all text concise.
 `;
@@ -264,10 +270,14 @@ Rules:
     };
   } catch (error: any) {
     console.error("Reality lens Gemini scan failed:", error);
-    if (String(error?.message || error).includes("timed out")) {
-      return buildFallbackScanResponse(state, req, "scan timeout");
-    }
-    throw new Error(error?.message || "Reality Lens Gemini scan failed.");
+    const message = String(error?.message || error || "");
+    const reason = message.includes("timed out")
+      ? "scan timeout"
+      : message.includes("Unable to process input image")
+        ? "invalid input image"
+        : message || "Gemini scan failure";
+
+    return buildFallbackScanResponse(state, req, reason);
   }
 }
 
