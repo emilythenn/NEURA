@@ -1,6 +1,8 @@
 export type HealthLabel = "Excellent" | "Healthy" | "Tight" | "At Risk";
 
 export type PatternLabel =
+  | "no_data"
+  | "low_confidence"
   | "insufficient_data"
   | "lower_than_usual"
   | "normal"
