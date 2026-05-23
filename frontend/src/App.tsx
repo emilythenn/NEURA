@@ -1521,10 +1521,10 @@ export default function App() {
             <div className="bg-[#fff9ea] border border-[#f5dfb8] rounded-3xl p-5 space-y-3.5 text-[#854d0e] animate-fade-in duration-150">
               <div className="flex items-center gap-2">
                 <Heart className="w-5 h-5 text-rose-500 fill-rose-500 animate-pulse" />
-                <h3 className="font-display font-extrabold text-[#713f12] text-sm">Mode Keselamatan Aktif</h3>
+                <h3 className="font-display font-extrabold text-[#713f12] text-sm">Safety Mode Active</h3>
               </div>
               <p className="text-xs leading-relaxed font-bold">
-                Large, easy-to-read controls are enabled. We screen every transfer to block SMS and WhatsApp scams. Your caregiver is ready to review large transfers.
+                Large, easy-to-read controls are enabled. We screen every transfer as a precaution layer. Your caregiver is ready to review large transfers.
               </p>
               <div className="text-[10px] text-[#a16207]">
                 Connected caregiver: <strong>{accountsState.caregiverName}</strong> • {accountsState.caregiverPhone}
