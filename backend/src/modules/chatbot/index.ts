@@ -751,9 +751,15 @@ function buildSafarResponse(message: string, state?: AppStateSnapshot | null) {
 router.post("/chat", async (req, res) => {
   try {
     const { message, elderlyActive, isVoice, imageBase64 } = req.body;
+    const imageMimeType = typeof req.body.imageMimeType === "string" && req.body.imageMimeType.trim()
+      ? req.body.imageMimeType.trim()
+      : "image/jpeg";
     const isDemoMode = !process.env.GEMINI_API_KEY;
     const normalizedMessage = typeof message === "string" ? message.trim() : "";
     const chatMode: "text" | "vision" | "voice" = imageBase64 ? "vision" : isVoice ? "voice" : "text";
+    const visionRequestSummary = imageBase64
+      ? (normalizedMessage || "Analyze this uploaded screenshot for scam, phishing, fake authority claims, suspicious links, QR fraud, mule-account pressure, and urgent transfer attempts.")
+      : normalizedMessage;
     const localSignals = extractSignals(normalizedMessage);
 
     if (!normalizedMessage && !imageBase64) return res.status(400).json({ error: "Empty query" });
@@ -774,6 +780,10 @@ router.post("/chat", async (req, res) => {
     try {
       const contentParts: any[] = [];
       contentParts.push({ text: `You are NEURA AI. Analyze the user's CURRENT request and return a JSON response.
+
+    CURRENT REQUEST: ${visionRequestSummary || "No text provided. Use the attached image if present."}
+
+    ${imageBase64 ? `VISION INPUT PRIORITY: The user attached an image. Treat this as a Shield Agent security review. Extract visible scam language, fake authority claims, phone numbers, URLs, bank names, QR-code hints, OTP requests, and pressure tactics. If the screenshot looks fraudulent, route to Shield and explain why.` : ""}
 
 ROUTING RULES — Pick ONE agent based on the CURRENT question (not previous context):
 1. **SHIELD** (Fraud Detection): ONLY if the current message contains:
@@ -813,7 +823,7 @@ RESPONSE FORMAT — Always return JSON with SPECIFIC, DETAILED answers (not gene
 }` });
 
       if (imageBase64) {
-        contentParts.push({ inlineData: { mimeType: "image/jpeg", data: imageBase64 } });
+        contentParts.push({ inlineData: { mimeType: imageMimeType, data: imageBase64 } });
       }
 
       const response = await geminiAI.models.generateContent({
@@ -852,6 +862,11 @@ RESPONSE FORMAT — Always return JSON with SPECIFIC, DETAILED answers (not gene
         actionNeeded = Boolean(parsed.actionNeeded);
         actionDetails = parsed.actionDetails || null;
         structured = parsed.structured || parsed;
+      }
+
+      if (imageBase64 && routedAgent !== "Shield") {
+        routedAgent = "Shield";
+        reasoning = "Image upload was routed to Shield for fraud and phishing review.";
       }
     } catch (err: any) {
       console.error("Chatbot Gemini failure:", err?.message);

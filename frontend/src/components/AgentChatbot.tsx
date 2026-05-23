@@ -18,6 +18,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
   const [isSending, setIsSending] = useState(false);
   const [selectedFileLabel, setSelectedFileLabel] = useState<string | null>(null);
   const [selectedFileBase64, setSelectedFileBase64] = useState<string | null>(null);
+  const [selectedFileMimeType, setSelectedFileMimeType] = useState<string | null>(null);
   const [safarActionStates, setSafarActionStates] = useState<Record<string, string>>({});
   const [pendingQuery, setPendingQuery] = useState<string>("");
   const [loadingStageIndex, setLoadingStageIndex] = useState(0);
@@ -136,6 +137,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
     const textToSend = customText || userInput;
     const activeFile = fileToInject || selectedFileLabel;
     const base64Content = selectedFileBase64;
+    const mimeType = selectedFileMimeType;
 
     if (!textToSend.trim() && !activeFile) return;
 
@@ -146,7 +148,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
       sender: "user",
       text: textToSend || `View visual attachment: ${activeFile}`,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      image: base64Content ? `data:image/jpeg;base64,${base64Content}` : undefined
+      image: base64Content ? `data:${mimeType || "image/jpeg"};base64,${base64Content}` : undefined
     };
 
     onAddMessage(userMsg);
@@ -154,6 +156,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
     setUserInput("");
     setSelectedFileLabel(null);
     setSelectedFileBase64(null);
+    setSelectedFileMimeType(null);
     setIsSending(true);
 
     // Scroll chat boundary
@@ -170,7 +173,8 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
           message: textToSend,
           elderlyActive: accountsState.elderlyMode,
           isVoice: false,
-          imageBase64: base64Content || undefined
+          imageBase64: base64Content || undefined,
+          imageMimeType: mimeType || undefined
         })
       });
 
@@ -413,6 +417,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
             const base64 = await readFileAsBase64(file);
             setSelectedFileLabel(file.name);
             setSelectedFileBase64(base64);
+            setSelectedFileMimeType(file.type || "image/jpeg");
           } catch (error) {
             console.error(error);
           }
@@ -1106,6 +1111,7 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
               onClick={() => {
                 setSelectedFileLabel(null);
                 setSelectedFileBase64(null);
+                setSelectedFileMimeType(null);
               }}
               className="text-slate-400 hover:text-slate-600 cursor-pointer text-sm font-semibold"
             >
