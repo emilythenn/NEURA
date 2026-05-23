@@ -16,6 +16,17 @@ export interface FinancingAccount {
   remaining: number;
 }
 
+export interface AutoDebit {
+  id:        string;
+  name:      string;
+  category:  string;
+  amount:    number;
+  frequency: string;
+  status:    "Active" | "Paused";
+  nextDate:  string;
+  provider:  string;
+}
+
 export interface LockedVault {
   id: string;
   name: string;
@@ -38,34 +49,28 @@ export interface AccountsState {
   caregiverPhone: string;
   isCaregiverApproved: boolean;
   lockedVaults: LockedVault[];
+  autoDebits: AutoDebit[]; 
 }
 
 export interface PredictResult {
-  amount: number;
-  category: string;
+  predictionId: string;
+  userId: string;
   itemName: string;
-  baseline: {
-    userBaselineMean: number;
-    zScore: number;
-    isNormal: boolean;
-  };
-  decisionType: "reasonable" | "risky" | "impulsive" | "financially heavy";
-  affordability: {
-    budgetRemaining: number;
-    remainingAfterPurchase: number;
-    pressure: "CRITICAL" | "HIGH" | "LOW";
-    budgetImpactPct: number;
-  };
-  behavioral: {
-    lateNightActive: boolean;
-    impulseProbability: number;
-  };
-  result: {
-    recommendation: "PROCEED" | "REVIEW" | "RECONSIDER";
-    color: string;
-    explanation: string;
-    riskScore: number;
-  };
+  category: string;
+  amount: number;
+  riskScore: number;
+  verdict: "PROCEED" | "REVIEW" | "RECONSIDER";
+  pressureLevel: "LOW" | "MEDIUM" | "CRITICAL";
+  classification: string;
+  impulseProbability: number;
+  budgetImpactPercent: number;
+  budgetDiscPercent: number;
+  remainingAfterPurchase: number;
+  willGoNegative: boolean;
+  lateNightActive: boolean;
+  explanation: string;
+  scoreBreakdown: Record<string, number>;
+  timestamp: number;
 }
 
 export interface ChatMessage {
@@ -81,23 +86,6 @@ export interface ChatMessage {
     message: string;
   };
   image?: string;
-  // Extended optional properties used by AgentChatbot
-  mode?: string;
-  confidence?: number;
-  reasoning?: string;
-  evidence?: ChatEvidenceItem[];
-  sources?: ChatSource[];
-  structured?: any;
-}
-
-export interface ChatEvidenceItem {
-  label: string;
-  value: string;
-}
-
-export interface ChatSource {
-  title: string;
-  note?: string;
 }
 
 export interface ProductScanResult {

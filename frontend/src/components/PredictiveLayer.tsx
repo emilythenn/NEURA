@@ -1,23 +1,42 @@
 import React, { useState } from "react";
-import { Sparkles, CheckCircle2, AlertTriangle, XCircle, ChevronRight, HelpCircle, ArrowRight, ShieldAlert, Coins } from "lucide-react";
-import { AccountsState, PredictResult } from "../types";
+import { Sparkles, CheckCircle2, AlertTriangle, XCircle, ShieldAlert} from "lucide-react";
+import { AccountsState } from "../types";
+
+// Shape returned by POST /api/predict-purchase
+interface BackendPredictResult {
+  predictionId: string;
+  itemName: string;
+  category: string;
+  amount: number;
+  riskScore: number;
+  verdict: "PROCEED" | "REVIEW" | "RECONSIDER";
+  pressureLevel: "LOW" | "MEDIUM" | "CRITICAL";
+  classification: string;
+  impulseProbability: number;
+  budgetImpactPercent: number;
+  budgetDiscPercent: number;
+  remainingAfterPurchase: number;
+  willGoNegative: boolean;
+  lateNightActive: boolean;
+  explanation: string;
+  scoreBreakdown: Record<string, number>;
+}
 
 interface PredictiveLayerProps {
   accountsState: AccountsState;
-  onAskAICompanion: (itemName: string, amount: string) => void;
+  onAskAICompanion: (itemName: string, amount: number | string) => void;
   onSelectAction: (actionType: "PROCEED" | "CANCEL" | "VAULT", amount: number, itemName: string) => void;
 }
-
 export default function PredictiveLayer({ accountsState, onAskAICompanion, onSelectAction }: PredictiveLayerProps) {
   const [formData, setFormData] = useState({
-    amount: "",
-    itemName: "",
+    amount: "250",
+    itemName: "Sony WH-1000XM5",
     category: "Gadgets & Wants",
     isImpulseSignal: false
   });
-  
+
   const [isLoading, setIsLoading] = useState(false);
-  const [predictResult, setPredictResult] = useState<PredictResult | null>(null);
+  const [predictResult, setPredictResult] = useState<BackendPredictResult | null>(null);
   const [activeTab, setActiveTab] = useState<"assess" | "explain">("assess");
 
   // Run evaluation via API
@@ -31,14 +50,17 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: formData.amount,
-          itemName: formData.itemName,
-          category: formData.category,
-          isImpulseSignal: formData.isImpulseSignal
+          amount:              parseFloat(formData.amount),
+          itemName:            formData.itemName,
+          category:            formData.category,
+          impulseSignal:       formData.isImpulseSignal,
+          currentBalance:      accountsState.totalBalance,
+          discretionaryBudget: accountsState.discretionaryBudget,
         })
       });
       const data = await response.json();
-      setPredictResult(data);
+      // Backend wraps success responses in { success, data }
+      setPredictResult(data.data ?? data);
       setActiveTab("explain");
     } catch (err) {
       console.error("Failed to predict purchase context: ", err);
@@ -47,32 +69,11 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
     }
   };
 
-  const getRecommendationBadge = (rec: "PROCEED" | "REVIEW" | "RECONSIDER") => {
-    switch (rec) {
-      case "PROCEED":
-        return {
-          bg: "bg-emerald-50 text-emerald-700 border-emerald-200",
-          icon: <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />,
-          label: "Proceed Safely",
-          msg: "Approved: Safe under your active budget constraints.",
-          colorText: "text-emerald-700"
-        };
-      case "REVIEW":
-        return {
-          bg: "bg-amber-50 text-amber-700 border-amber-200",
-          icon: <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />,
-          label: "Review Carefully",
-          msg: "Caution: Approaching budget limits or baseline deviation.",
-          colorText: "text-amber-700"
-        };
-      case "RECONSIDER":
-        return {
-          bg: "bg-rose-50 text-rose-700 border-rose-200",
-          icon: <XCircle className="w-5 h-5 text-rose-600 shrink-0" />,
-          label: "Reconsider",
-          msg: "Warning: High risk! Over budget and abnormal purchase pattern.",
-          colorText: "text-rose-700"
-        };
+  const getRecommendationBadge = (verdict: "PROCEED" | "REVIEW" | "RECONSIDER") => {
+    switch (verdict) {
+      case "PROCEED":    return { bg: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />, label: "Proceed Safely",    verdictLabel: "Proceed",              msg: "Approved: Safe under your active budget constraints." };
+      case "REVIEW":     return { bg: "bg-amber-50 text-amber-700 border-amber-200",       icon: <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />, label: "Review Carefully",  verdictLabel: "Review Recommended",   msg: "Caution: Approaching budget limits or baseline deviation." };
+      case "RECONSIDER": return { bg: "bg-rose-50 text-rose-700 border-rose-200",          icon: <XCircle className="w-5 h-5 text-rose-600 shrink-0" />,        label: "Reconsider",        verdictLabel: "Strict Reconsideration", msg: "Warning: High risk! Over budget and abnormal purchase pattern." };
     }
   };
 
@@ -123,7 +124,7 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
                 type="text"
                 value={formData.itemName}
                 onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
-                placeholder="e.g. wireless headphones, groceries, or training course"
+                placeholder="e.g. Sony WH-1000XM5"
                 className="w-full bg-slate-50 border border-slate-200 focus:border-bimb-red focus:bg-white outline-none rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all"
                 required
               />
@@ -209,7 +210,11 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
           {predictResult && (
             <>
               {(() => {
-                const badge = getRecommendationBadge(predictResult.result.recommendation);
+                const badge = getRecommendationBadge(predictResult.verdict);
+                // Compute baseline values from the scoring result
+                const typicalSpend = 180;
+                const zScore = (predictResult.amount - typicalSpend) / 90;
+                const isNormal = Math.abs(zScore) < 1.5;
                 return (
                   <div className={`p-4 rounded-2xl border ${badge.bg}`}>
                     <div className="flex items-start gap-3">
@@ -217,20 +222,20 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <span className="font-display font-bold text-base tracking-tight text-slate-900">
-                            AI Verdict: {badge.colorText === "text-emerald-700" ? "Proceed" : badge.colorText === "text-amber-700" ? "Review Recommended" : "Strict Reconsideration"}
+                            AI Verdict: {badge.verdictLabel}
                           </span>
                           <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full ${
-                            predictResult.result.recommendation === "PROCEED" ? "bg-emerald-100 text-emerald-800" :
-                            predictResult.result.recommendation === "REVIEW" ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"
+                            predictResult.verdict === "PROCEED" ? "bg-emerald-100 text-emerald-800" :
+                            predictResult.verdict === "REVIEW"  ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"
                           }`}>
-                            Risk Score: {predictResult.result.riskScore}%
+                            Risk Score: {predictResult.riskScore}%
                           </span>
                         </div>
                         <p className="text-[11px] font-medium text-slate-500 mt-0.5">{badge.label} • {badge.msg}</p>
 
                         <div className="mt-3 bg-white/70 backdrop-blur-xs p-3.5 rounded-xl border border-slate-100/50">
                           <p className="text-xs font-semibold text-slate-900">🧠 AI CFO Explanation:</p>
-                          <p className="text-xs text-slate-700 leading-relaxed italic mt-1">"{predictResult.result.explanation}"</p>
+                          <p className="text-xs text-slate-700 leading-relaxed italic mt-1">"{predictResult.explanation}"</p>
                         </div>
                       </div>
                     </div>
@@ -239,64 +244,76 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
               })()}
 
               {/* Advanced Pipeline Diagnostics (The 4 channels) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* 1. Spending Baseline Engine */}
-                <div className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-xl">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">1. Behavioral Baseline</span>
-                  <div className="flex justify-between items-baseline mt-1.5">
-                    <span className="text-sm font-display font-semibold text-slate-800">
-                      Baseline: RM {predictResult.baseline.userBaselineMean}
-                    </span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${predictResult.baseline.isNormal ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-                      {predictResult.baseline.isNormal ? "Normal Fit" : "Abnormal Shift"}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 mt-1">Deviation Z-Score is {predictResult.baseline.zScore.toFixed(2)} std dev from monthly normal.</p>
-                </div>
+              {(() => {
+                const typicalSpend = 180;
+                const zScore = (predictResult.amount - typicalSpend) / 90;
+                const isNormal = Math.abs(zScore) < 1.5;
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {/* 1. Spending Baseline Engine */}
+                    <div className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-xl">
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">1. Behavioral Baseline</span>
+                      <div className="flex justify-between items-baseline mt-1.5">
+                        <span className="text-sm font-display font-semibold text-slate-800">
+                          Baseline: RM {typicalSpend}
+                        </span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isNormal ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                          {isNormal ? "Normal Fit" : "Abnormal Shift"}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-1">Deviation Z-Score is {zScore.toFixed(2)} std dev from monthly normal.</p>
+                    </div>
 
-                {/* 2. Decision Logic Classification */}
-                <div className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-xl">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">2. Core Classification</span>
-                  <div className="flex justify-between items-baseline mt-1.5">
-                    <span className="text-sm font-display font-semibold text-slate-800 capitalize">
-                      {predictResult.decisionType}
-                    </span>
-                    <span className="text-[10px] text-slate-400">Class Label</span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 mt-1">Profiled as {predictResult.decisionType === "reasonable" ? "rational shopping profile." : "statistically high-risk emotional commitment."}</p>
-                </div>
+                    {/* 2. Decision Logic Classification */}
+                    <div className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-xl">
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">2. Core Classification</span>
+                      <div className="flex justify-between items-baseline mt-1.5">
+                        <span className="text-sm font-display font-semibold text-slate-800 capitalize">
+                          {predictResult.classification.replace("_", " ")}
+                        </span>
+                        <span className="text-[10px] text-slate-400">Class Label</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-1">Profiled as {predictResult.classification === "reasonable" ? "rational shopping profile." : "statistically high-risk emotional commitment."}</p>
+                    </div>
 
-                {/* 3. Budget constraint checking */}
-                <div className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-xl">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">3. Budget Pressure</span>
-                  <div className="flex justify-between items-baseline mt-1.5">
-                    <span className="text-sm font-display font-semibold text-slate-800">
-                      Impact: {Math.round(predictResult.affordability.budgetImpactPct)}%
-                    </span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                      predictResult.affordability.pressure === "CRITICAL" ? "bg-rose-100 text-rose-800" : "bg-slate-200 text-slate-800"
-                    }`}>
-                      {predictResult.affordability.pressure}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 mt-1">RM {predictResult.affordability.remainingAfterPurchase.toFixed(2)} remaining discretionary capacity.</p>
-                </div>
+                    {/* 3. Budget constraint checking */}
+                    <div className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-xl">
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">3. Budget Pressure</span>
+                      <div className="flex justify-between items-baseline mt-1.5">
+                        <span className="text-sm font-display font-semibold text-slate-800">
+                          Impact: {Math.round(predictResult.budgetImpactPercent)}%
+                        </span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          predictResult.pressureLevel === "CRITICAL" ? "bg-rose-100 text-rose-800" :
+                          predictResult.pressureLevel === "MEDIUM"   ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"
+                        }`}>
+                          {predictResult.pressureLevel}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-1">
+                        {predictResult.willGoNegative
+                          ? `⚠️ RM ${Math.abs(predictResult.remainingAfterPurchase).toFixed(2)} short — balance goes negative!`
+                          : `RM ${predictResult.remainingAfterPurchase.toFixed(2)} remaining after purchase.`}
+                      </p>
+                    </div>
 
-                {/* 4. Impulse Probability Meter */}
-                <div className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-xl">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">4. Impulse likelihood</span>
-                  <div className="flex justify-between items-baseline mt-1.5">
-                    <span className="text-sm font-display font-semibold text-slate-800">
-                      Score: {predictResult.behavioral.impulseProbability}%
-                    </span>
-                    <span className="text-[10px] text-slate-400">Time: {predictResult.behavioral.lateNightActive ? "Late night" : "Normal hour"}</span>
+                    {/* 4. Impulse Probability Meter */}
+                    <div className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-xl">
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">4. Impulse Likelihood</span>
+                      <div className="flex justify-between items-baseline mt-1.5">
+                        <span className="text-sm font-display font-semibold text-slate-800">
+                          Score: {predictResult.impulseProbability}%
+                        </span>
+                        <span className="text-[10px] text-slate-400">Time: {predictResult.lateNightActive ? "Late night" : "Normal hour"}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-1">Probability spike modeled by timing, browsing, and frequency velocity.</p>
+                    </div>
                   </div>
-                  <p className="text-[10px] text-slate-500 mt-1">Probability spike modeled by timing, browsing, and frequency velocity.</p>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* ACTION CALLOUT POPUP / BAR */}
-              {predictResult.result.recommendation !== "PROCEED" && (
+              {predictResult.verdict !== "PROCEED" && (
                 <div className="bg-slate-900 text-white rounded-2xl p-4 mt-4 border border-slate-800">
                   <div className="flex items-center gap-2 mb-3">
                     <ShieldAlert className="w-5 h-5 text-bimb-gold shrink-0 animate-bounce" />
@@ -307,16 +324,13 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-stretch justify-end gap-2.5 pt-2 border-t border-slate-800">
-                    {/* Ask AI Companion */}
                     <button
                       type="button"
-                      onClick={() => onAskAICompanion(predictResult.itemName, String(predictResult.amount))}
+                      onClick={() => onAskAICompanion(predictResult.itemName, predictResult.amount)}
                       className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
                     >
                       🗣️ Ask AI: Is there a discount?
                     </button>
-
-                    {/* Delay & Lock */}
                     <button
                       type="button"
                       onClick={() => onSelectAction("VAULT", predictResult.amount, predictResult.itemName)}
@@ -324,8 +338,6 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
                     >
                       🔒 Delay & Lock to Wishlist Vault
                     </button>
-
-                    {/* Cancel purchase decision */}
                     <button
                       type="button"
                       onClick={() => onSelectAction("CANCEL", predictResult.amount, predictResult.itemName)}
@@ -333,8 +345,6 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
                     >
                       🤝 Cancel Purchase (Wise Decision)
                     </button>
-
-                    {/* Proceed to purchase (less obvious as instructed) */}
                     <button
                       type="button"
                       onClick={() => onSelectAction("PROCEED", predictResult.amount, predictResult.itemName)}

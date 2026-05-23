@@ -27,7 +27,8 @@ export default function App() {
     caregiverName: "Sara",
     caregiverPhone: "+60 12-345 6789",
     isCaregiverApproved: false,
-    lockedVaults: []
+    lockedVaults: [],
+    autoDebits: []
   });
 
   const [activeTab, setActiveTab] = useState<"analysis" | "chat" | "home" | "scanner" | "profile">("home");
@@ -52,6 +53,46 @@ export default function App() {
   const [newAdCategory, setNewAdCategory] = useState("Utilities");
   const [newAdAmount, setNewAdAmount] = useState("");
   const [showAddAdModal, setShowAddAdModal] = useState(false);
+
+  // AutoDebit API helpers
+  const handleAddAutoDebit = async () => {
+    if (!newAdName || !newAdAmount) {
+      postStatusMessage("Warning: Both provider designation and currency limit are mandatory.", "warn");
+      return;
+    }
+    const val = parseFloat(newAdAmount);
+    if (isNaN(val) || val <= 0) {
+      postStatusMessage("Warning: Please supply a genuine non-zero debit amount.", "warn");
+      return;
+    }
+    await fetch("/api/auto-debits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newAdName, category: newAdCategory, amount: val }),
+    });
+    await fetchState();
+    postStatusMessage(`Shariah autodebit billing mandate for ${newAdName} successfully established at RM ${val.toFixed(2)}/month.`, "success");
+    setNewAdName("");
+    setNewAdAmount("");
+    setShowAddAdModal(false);
+  };
+
+  const handleToggleAutoDebit = async (id: string, name: string, currentStatus: string) => {
+    await fetch(`/api/auto-debits/${id}/toggle`, { method: "PATCH" });
+    await fetchState();
+    postStatusMessage(
+      currentStatus === "Active"
+        ? `Direct billing for ${name} paused. Charges are stopped until resumed.`
+        : `Direct billing for ${name} resumed successfully.`,
+      "success"
+    );
+  };
+
+  const handleDeleteAutoDebit = async (id: string, name: string) => {
+    await fetch(`/api/auto-debits/${id}`, { method: "DELETE" });
+    await fetchState();
+    postStatusMessage(`Revoked Direct-Debit mandate for ${name}. Plan deleted.`, "warn");
+  };
   
   // QR Scan and Receive simulation states
   const [qrFlow, setQrFlow] = useState<"scan" | "receive" | null>(null);
@@ -284,7 +325,7 @@ export default function App() {
   };
 
   // Handler: When user clicks "Ask companion" on the advice pop-up, it moves them to bot tab and autofills input
-  const handleAskAICompanion = (itemName: string, amount: string) => {
+  const handleAskAICompanion = (itemName: string, amount: string | number) => {
     setActiveTab("chat");
     // Append auto prompt
     setChatbotMessages(prev => [
@@ -1626,8 +1667,8 @@ export default function App() {
             </div>
 
             {/* Scrollable Container Body */}
-                    <div className="overflow-y-auto flex-1 p-4 space-y-3 text-xs">
-                      <div id="recaptcha-container" />
+            <div className="overflow-y-auto flex-1 p-4 space-y-3 text-xs">
+              <div id="recaptcha-container" />
               
               {setupStep === "form" ? (
                 /* Phase 1: Input details */
@@ -1729,23 +1770,23 @@ export default function App() {
                   </div>
 
                   {/* Actions */}
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0">
-                      <button 
-                        type="button"
-                        onClick={() => setShowElderlySetup(false)}
-                        className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-colors cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={handleGetCode}
-                        className="px-4 py-2 bg-[#d31145] hover:bg-[#b00e3a] text-white font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm cursor-pointer"
-                      >
-                        <span>Get Code</span>
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0">
+                    <button 
+                      type="button"
+                      onClick={() => setShowElderlySetup(false)}
+                      className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={handleGetCode}
+                      className="px-4 py-2 bg-[#d31145] hover:bg-[#b00e3a] text-white font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm cursor-pointer"
+                    >
+                      <span>Get Code</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               ) : setupStep === "handshake" ? (
                 /* Phase 2: Caregiver Verification Handshake Activation with OTP input */
@@ -1933,19 +1974,11 @@ export default function App() {
                   {/* Code verification input */}
                   <div className="space-y-1 font-sans">
                     <label className="block text-[10px] font-bold text-slate-600">
-                      Enter Caregiver's Deactivation Code
                     </label>
                     <div className="relative font-sans">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs">🔑</span>
                       <input 
                         type="text"
-                        className="w-full text-xs font-mono tracking-widest text-center font-bold border border-slate-200 rounded-xl px-8 py-2 focus:outline-none focus:ring-1 focus:ring-[#d31145] text-slate-800"
-                        maxLength={6}
-                        value={typedOtp}
-                        onChange={(e) => {
-                          setTypedOtp(e.target.value.trim());
-                          setOtpVerificationError("");
-                        }}
                         placeholder="• • • • • •"
                       />
                     </div>
@@ -1968,7 +2001,19 @@ export default function App() {
 
                     <button 
                       type="button"
-                      onClick={verifyDisable}
+                      onClick={() => {
+                        if (!typedOtp) {
+                          setOtpVerificationError("Sila masukkan Kod One-Time dari penjaga.");
+                          return;
+                        }
+                        if (typedOtp !== generatedOtp) {
+                          setOtpVerificationError("Salah Kod! Sila cuba lagi.");
+                          return;
+                        }
+                        // Success! Turn off security tier
+                        handleElderlyToggleOnServer(false);
+                        setShowElderlySetup(false);
+                      }}
                       className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl transition-all shadow-sm cursor-pointer"
                     >
                       Deactivate
