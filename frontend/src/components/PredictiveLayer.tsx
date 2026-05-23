@@ -10,13 +10,8 @@ interface PredictiveLayerProps {
 
 export default function PredictiveLayer({ accountsState, onAskAICompanion, onSelectAction }: PredictiveLayerProps) {
   const [formData, setFormData] = useState({
-<<<<<<< HEAD
     amount: "",
     itemName: "",
-=======
-    amount: "250",
-    itemName: "Sony WH-1000XM5",
->>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
     category: "Gadgets & Wants",
     isImpulseSignal: false
   });
@@ -128,11 +123,7 @@ export default function PredictiveLayer({ accountsState, onAskAICompanion, onSel
                 type="text"
                 value={formData.itemName}
                 onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
-<<<<<<< HEAD
                 placeholder="e.g. wireless headphones, groceries, or training course"
-=======
-                placeholder="e.g. Sony WH-1000XM5"
->>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
                 className="w-full bg-slate-50 border border-slate-200 focus:border-bimb-red focus:bg-white outline-none rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all"
                 required
               />

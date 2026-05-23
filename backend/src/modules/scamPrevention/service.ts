@@ -10,12 +10,9 @@ import {
   getBlacklistAccount,
   getReceiverStage as getReceiverStageFirestore,
   updateReceiverStageFirestore,
-  getLinkedSuspiciousAccount
+  getLinkedSuspiciousAccount,
+  createQuarantineTransfer
 } from "./firestore";
-
-<<<<<<< HEAD
-// Re-export some firestore helpers with stable names used by other modules
-import { createQuarantineTransfer } from "./firestore";
 
 export async function checkBlacklist(accountNo: string) {
   return await getBlacklistAccount(accountNo);
@@ -52,8 +49,6 @@ export async function createQuarantine(data: {
   return record;
 }
 
-=======
->>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
 let geminiAI: GoogleGenAI | null = null;
 export function setGeminiAI(client: GoogleGenAI | null) {
   geminiAI = client;
@@ -99,11 +94,7 @@ Generate bilingual warnings in JSON:
       config: { responseMimeType: "application/json" }
     });
 
-<<<<<<< HEAD
     if (response && response.text) {
-=======
-    if (response?.text) {
->>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
       const parsed = JSON.parse(response.text);
       return {
         en: parsed.en || "WARNING: High-risk transfer.",
@@ -139,7 +130,6 @@ export async function evaluateTransferRisk(ctx: {
   const reasons: string[] = [];
   let blacklistMatch: RecipientBlacklist | undefined;
 
-  // Factor 1: Blacklist matching with localized safety failover
   try {
     const matchedBlacklist = await getBlacklistAccount(ctx.recipientAccountNo);
     if (matchedBlacklist) {
@@ -152,33 +142,31 @@ export async function evaluateTransferRisk(ctx: {
     reasons.push("Blacklist verification unavailable - proceeding with standard checks");
   }
 
-  // Factor 2: Velocity check
   if (ctx.amount > 2000 && isLateNight) {
     riskScore += 40;
     reasons.push("High-value transfer (>RM2000) at suspicious late-night hours");
   }
 
-  // Factor 3: Linked suspicious account checking (transacting with blacklist-connected accounts)
   try {
     const linkedSuspicious = await getLinkedSuspiciousAccount(ctx.recipientAccountNo);
     if (linkedSuspicious) {
-      // Add significant risk - transferring to account connected to blacklist is HIGH RISK
-      riskScore += linkedSuspicious.riskScore + 15; // Full score + 15 point bonus to push into RED
-      
-      // Provide detailed reason about the connection (user-friendly format)
-      const connectionDescriptions = linkedSuspicious.linkedBlacklistAccounts.map(link => {
-        let connectionType = "";
-        if (link.connectionType === "transfers_to") {
-          connectionType = "sends money to flagged accounts";
-        } else if (link.connectionType === "receives_from") {
-          connectionType = "receives money from flagged accounts";
-        } else if (link.connectionType === "bidirectional") {
-          connectionType = "conducts frequent transactions with flagged accounts";
-        }
-        return connectionType;
-      }).filter(desc => desc); // Remove empty descriptions
-      
-      const uniqueDescriptions = [...new Set(connectionDescriptions)]; // Remove duplicates
+      riskScore += linkedSuspicious.riskScore + 15;
+
+      const connectionDescriptions = linkedSuspicious.linkedBlacklistAccounts
+        .map((link) => {
+          let connectionType = "";
+          if (link.connectionType === "transfers_to") {
+            connectionType = "sends money to flagged accounts";
+          } else if (link.connectionType === "receives_from") {
+            connectionType = "receives money from flagged accounts";
+          } else if (link.connectionType === "bidirectional") {
+            connectionType = "conducts frequent transactions with flagged accounts";
+          }
+          return connectionType;
+        })
+        .filter((desc) => desc);
+
+      const uniqueDescriptions = [...new Set(connectionDescriptions)];
       reasons.push(`This account ${uniqueDescriptions.join(" and ")} reported to law enforcement`);
     }
   } catch (dbErr) {
@@ -186,13 +174,11 @@ export async function evaluateTransferRisk(ctx: {
     reasons.push("Linked account verification unavailable - proceeding with standard checks");
   }
 
-  // Factor 4: Budget exceeding limits
   if (ctx.amount > ctx.discretionaryBudget && ctx.amount < 5000) {
     riskScore += 20;
     reasons.push("Amount exceeds available discretionary budget");
   }
 
-  // Factor 5: Receiver stage escalation checking
   try {
     let receiverStageData = await getReceiverStageFirestore(ctx.recipientAccountNo);
     if (!receiverStageData) {
@@ -220,7 +206,6 @@ export async function evaluateTransferRisk(ctx: {
     reasons.push("Account stage monitoring unavailable - proceeding with standard checks");
   }
 
-  // Final risk grading
   let riskLevel: "GREEN" | "AMBER" | "RED";
   if (riskScore < 30) {
     riskLevel = "GREEN";
@@ -237,8 +222,4 @@ export async function evaluateTransferRisk(ctx: {
     requiresVerification: riskLevel !== "GREEN",
     blacklistMatch
   };
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 007728064ecbcbe6caf699314836ad96302370d1
