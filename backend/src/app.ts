@@ -3,12 +3,12 @@ import cors from "cors";
 import helmet from "helmet";
 import { env } from "./config/env";
 import { errorMiddleware, notFoundMiddleware } from "./middleware/error.middleware";
-import trackerRoutes  from "./modules/tracker/tracker.routes";
-import financeRoutes  from "./modules/finance/finance.routes";
-import { purchaseRouter, historyRouter } from "./modules/prediction/predict.routes";
-import stateRoutes    from "./modules/state/state.routes";
-import wishlistRoutes from "./modules/wishlist/wishlist.routes";
-import chatbotRoutes  from "./modules/chatbot/chatbot.routes";
+import trackerRoutes  from "./modules/predictionAnalysis/tracker/tracker.routes";
+import financeRoutes  from "./modules/predictionAnalysis/finance/finance.routes";
+import { purchaseRouter, historyRouter } from "./modules/predictionAnalysis/prediction/predict.routes";
+import stateRoutes    from "./modules/predictionAnalysis/state/state.routes";
+import wishlistRoutes from "./modules/predictionAnalysis/wishlist/wishlist.routes";
+import chatbotRoutes  from "./modules/predictionAnalysis/chatbot/chatbot.routes";
 
 export function createApp(): Application {
   const app = express();
