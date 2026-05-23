@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { addToWishlist, getWishlist, updateWishlistStatus, deleteWishlistItem } from "./wishlist.service";
-import { ok, fail } from "../../utils/response";
+import { ok, fail } from "../../../utils/response";
 import { WishlistStatus } from "./wishlist.model";
 
 const DEFAULT_USER = "default_user";

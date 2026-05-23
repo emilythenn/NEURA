@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as service from "./state.service";
-import { ok, fail } from "../../utils/response";
+import { ok, fail } from "../../../utils/response";
 
 export async function getState(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { getDb, now } from "../../config/firebase";
+import { getDb, now } from "../../../config/firebase";
 import { WishlistDoc, WishlistItemResponse, WishlistStatus } from "./wishlist.model";
 
 const COL = "wishlist";

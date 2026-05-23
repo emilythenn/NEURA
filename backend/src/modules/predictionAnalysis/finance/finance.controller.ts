@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { getFinancialSummary, analyzeSpendingPattern } from "./finance.service";
-import { ok, fail } from "../../utils/response";
+import { ok, fail } from "../../../utils/response";
 
 export async function summary(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {

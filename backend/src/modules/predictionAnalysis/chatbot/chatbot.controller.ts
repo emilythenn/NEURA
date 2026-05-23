@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { routeIntent } from "./chatbot.service";
-import { ok, fail } from "../../utils/response";
+import { ok, fail } from "../../../utils/response";
 import { IntentType, IntentRequest } from "./chatbot.model";
 
 const VALID_INTENTS = new Set<string>([

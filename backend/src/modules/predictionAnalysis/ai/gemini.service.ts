@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { env } from "../../config/env";
+import { env } from "../../../config/env";
 import { ScoringInput, ScoringResult } from "../prediction/scoring.engine";
 import { buildCFOPrompt, buildDiscountPrompt, CFO_SYSTEM_PROMPT } from "./prompts";
 import { IntentContext } from "../chatbot/chatbot.model";

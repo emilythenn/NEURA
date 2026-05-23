@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-import { getDb, now } from "../../config/firebase";
-import { AccountsState, AutoDebit } from "../../types/state.types";
+import { getDb, now } from "../../../config/firebase";
+import { AccountsState, AutoDebit } from "../../../types/state.types";
 import { getFinancialSummary } from "../finance/finance.service";
 import { createExpense } from "../tracker/tracker.service";
 import { ExpenseCategory } from "../tracker/tracker.model";

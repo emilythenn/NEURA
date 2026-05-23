@@ -1,6 +1,6 @@
 import admin from "firebase-admin";
 import { v4 as uuidv4 } from "uuid";
-import { getDb } from "../../config/firebase";
+import { getDb } from "../../../config/firebase";
 import {
   IncomeDoc, ExpenseDoc,
   IncomeResponse, ExpenseResponse,

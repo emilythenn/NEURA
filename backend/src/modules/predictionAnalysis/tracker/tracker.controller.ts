@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { IncomeSchema, ExpenseSchema } from "../../utils/validators";
+import { IncomeSchema, ExpenseSchema } from "../../../utils/validators";
 import * as service from "./tracker.service";
-import { ok, created, fail } from "../../utils/response";
+import { ok, created, fail } from "../../../utils/response";
 
 const DEFAULT_USER = "default_user";
 

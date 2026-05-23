@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { getDb } from "../../config/firebase";
+import { getDb } from "../../../config/firebase";
 import { IntentRequest, IntentType, IntentContext, DecisionLogDoc } from "./chatbot.model";
 import { addToWishlist } from "../wishlist/wishlist.service";
 import { WishlistItemResponse } from "../wishlist/wishlist.model";

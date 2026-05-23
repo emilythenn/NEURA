@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { env } from "../../config/env";
+import { env } from "../../../config/env";
 import { predict, getHistory, saveHistoryHandler, deleteHistory } from "./predict.controller";
 
 // ── /api/predict-purchase ─────────────────────────────────────────────────────

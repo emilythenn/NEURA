@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { PredictSchema } from "../../utils/validators";
+import { PredictSchema } from "../../../utils/validators";
 import { runPrediction, getPredictionHistory, deletePrediction, saveHistory, PredictRequest } from "./predict.service";
-import { ok, fail } from "../../utils/response";
+import { ok, fail } from "../../../utils/response";
 
 export async function predict(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
