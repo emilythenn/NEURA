@@ -1,5 +1,6 @@
 import { getIncomes, getExpenses } from "../tracker/tracker.service";
 import { FinancialSummary, HealthLabel, CategoryBreakdown, MonthlyPoint, SpendingPatternResult } from "./finance.model";
+import { mapToTrackerCategory, normalizeCategory } from "../shared/category.utils";
 
 // Expense categories that are non-discretionary (fixed obligations).
 // Discretionary budget = totalIncome - sum of these categories.
@@ -11,18 +12,23 @@ const FIXED_CATEGORIES = new Set([
 ]);
 
 export const CATEGORY_RISK: Record<string, number> = {
-  "Food & Dining":     5,
-  "Transportation":    5,
-  "Bills & Utilities": 15,
-  "Shopping":          25,
-  "Entertainment":     25,
-  "Savings":           0,
-  "Investments":       0,
-  "Luxury":            35,
-  "Gadgets & Wants":   25,
-  "Dining & Cafes":    10,
-  "Groceries & Needs": 5,
-  "Luxury & Travel":   35,
+  // Tracker (DB) categories
+  "Food & Dining":           5,
+  "Transportation":          5,
+  "Bills & Utilities":       15,
+  "Shopping":                25,
+  "Entertainment":           25,
+  "Savings":                 0,
+  "Investments":             0,
+  // Mapped-to categories (from predict UI)
+  "Luxury & Travel":         35,
+  "Healthcare":              5,
+  "Islamic Finance & Zakat": 0,
+  // Legacy keys retained for any stored predict history
+  "Luxury":                  35,
+  "Gadgets & Wants":         25,
+  "Dining & Cafes":          10,
+  "Groceries & Needs":       5,
 };
 
 export async function getFinancialSummary(userId: string): Promise<FinancialSummary> {
@@ -85,22 +91,43 @@ export async function getFinancialSummary(userId: string): Promise<FinancialSumm
 export async function analyzeSpendingPattern(
   userId: string, category: string, amount: number
 ): Promise<SpendingPatternResult> {
-  const expenses = await getExpenses(userId);
-  const catExpenses = expenses.filter(e => e.category === category);
+  const rawExpenses = await getExpenses(userId);
+  const expenses = Array.isArray(rawExpenses) ? rawExpenses : (rawExpenses as any).data ?? [];
 
-  if (catExpenses.length < 3) {
+  const mappedCategory = mapToTrackerCategory(category);
+  const catExpenses = expenses.filter(
+    e => normalizeCategory(e.category) === normalizeCategory(mappedCategory)
+  );
+
+  console.log("Current category:", category);
+  console.log("Mapped to tracker category:", mappedCategory);
+  console.log("All categories:", expenses.map((e: any) => e.category));
+  console.log("Matched count:", catExpenses.length);
+
+  if (catExpenses.length === 0) {
     return {
-      label:            "insufficient_data",
+      label:            "no_data",
       categoryBaseline: null,
       confidence:       "low",
-      message:          "Not enough history to determine your spending pattern in this category.",
+      message:          "No spending history for this category yet.",
       ratio:            null,
-      sampleCount:      catExpenses.length,
+      sampleCount:      0,
+    };
+  }
+
+  if (catExpenses.length === 1) {
+    return {
+      label:            "low_confidence",
+      categoryBaseline: null,
+      confidence:       "low",
+      message:          "Only one past entry — building your pattern.",
+      ratio:            null,
+      sampleCount:      1,
     };
   }
 
   const categoryBaseline =
-    catExpenses.reduce((s, e) => s + e.amount, 0) / catExpenses.length;
+    catExpenses.reduce((s: number, e: any) => s + e.amount, 0) / catExpenses.length;
   const ratio = amount / categoryBaseline;
 
   const label: SpendingPatternResult["label"] =
@@ -115,8 +142,8 @@ export async function analyzeSpendingPattern(
   const baselineStr = `RM ${categoryBaseline.toFixed(2)}`;
   const message =
     label === "lower_than_usual"      ? `Below your usual ${baselineStr} for this category.` :
-    label === "normal"                ? `Matches your usual spending (avg ${baselineStr}).`  :
-    label === "higher_than_usual"     ? `A bit higher than your usual ${baselineStr}.`       :
+    label === "normal"                ? `Matches your usual spending (avg ${baselineStr}).`   :
+    label === "higher_than_usual"     ? `A bit higher than your usual ${baselineStr}.`        :
                                         `Much higher than your usual ${baselineStr} — this stands out.`;
 
   return {

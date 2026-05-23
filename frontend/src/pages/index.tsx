@@ -9,6 +9,8 @@ import {
 type DecisionClass = "reasonable" | "risky" | "impulsive" | "financially_heavy";
 
 type PatternLabel =
+  | "no_data"
+  | "low_confidence"
   | "insufficient_data"
   | "lower_than_usual"
   | "normal"
@@ -167,6 +169,8 @@ function feelToLabel(feel: PatternLabel | string): string {
     case "in-line":               return "In line with your usual";
     case "a-bit-higher":          return "A bit higher than usual";
     case "much-higher":           return "Much higher than usual";
+    case "low_confidence":        return "Building your pattern";
+    case "no_data":               return "No history yet";
     default:                      return "Not enough history";
   }
 }
@@ -180,6 +184,8 @@ function feelToPill(feel: PatternLabel | string): string {
     case "in-line":               return "Feels normal";
     case "a-bit-higher":          return "Slightly unusual";
     case "much-higher":           return "Stands out";
+    case "low_confidence":        return "First entries";
+    case "no_data":               return "No baseline";
     default:                      return "No baseline";
   }
 }
@@ -201,12 +207,16 @@ function buildBreakdown(r: PredictResult): HistoryEntry["breakdown"] {
   const pressureMap = { LOW: "LOW", MEDIUM: "MEDIUM", CRITICAL: "HIGH" } as const;
   const feel = r.spending.feel;
   const patternSummary =
+    feel === "no_data"                ? "No spending history for this category yet."           :
+    feel === "low_confidence"         ? "Only one past entry — still building your pattern."  :
     feel === "insufficient_data"      ? "Not enough history to compare against your baseline." :
     feel === "lower_than_usual"       ? "Below your usual spending in this category."          :
     feel === "normal"                 ? "Matches your usual habits."                           :
     feel === "higher_than_usual"      ? "Slightly above your normal range."                    :
                                         "Stands out from your typical pattern.";
   const consistency =
+    feel === "no_data"                ? "No baseline available"                :
+    feel === "low_confidence"         ? "Building baseline"                    :
     feel === "insufficient_data"      ? "No baseline available"                :
     feel === "lower_than_usual"       ? "Below average"                        :
     feel === "normal"                 ? "Consistent with category history"     :

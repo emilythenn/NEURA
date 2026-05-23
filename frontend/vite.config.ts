@@ -10,5 +10,8 @@ export default defineConfig({
         secure: false,
       },
     },
-  },
+    host: '0.0.0.0',
+    hmr: process.env.DISABLE_HMR !== 'true',
+    watch: process.env.DISABLE_HMR === 'true' ? undefined : {},
+    },
 });

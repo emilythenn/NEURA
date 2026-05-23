@@ -1,4 +1,5 @@
 import { CATEGORY_RISK } from "../finance/finance.service";
+import { mapToTrackerCategory } from "../shared/category.utils";
 
 export type Verdict       = "PROCEED" | "REVIEW" | "RECONSIDER";
 export type PressureLevel = "LOW" | "MEDIUM" | "CRITICAL";
@@ -77,7 +78,7 @@ export function scoreInput(input: ScoringInput): ScoringResult {
   const modifiers         = lateNightActive ?  6 : 0;
 
   // Normalize raw category weight into its 15-point slot
-  const rawCategoryRisk  = CATEGORY_RISK[category] ?? 10;
+  const rawCategoryRisk  = CATEGORY_RISK[mapToTrackerCategory(category)] ?? 10;
   const categoryComponent =
     (Math.min(rawCategoryRisk, CATEGORY_RISK_CEILING) / CATEGORY_RISK_CEILING) * 15;
 

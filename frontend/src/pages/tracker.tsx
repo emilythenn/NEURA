@@ -414,12 +414,32 @@ function Insight({ icon, label, value }: { icon: React.ReactNode; label: string;
 }
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  const [entered, setEntered] = useState(false);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => requestAnimationFrame(() => setEntered(true)));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const handleClose = () => {
+    setEntered(false);
+    setTimeout(onClose, 280);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-      <div className="bg-white w-full sm:max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+    <div
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 transition-opacity duration-300 ${entered ? "opacity-100" : "opacity-0"}`}
+    >
+      <div
+        className={`bg-white w-full sm:max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transition-all duration-300 ease-out ${
+          entered
+            ? "translate-y-0 opacity-100"
+            : "translate-y-full sm:translate-y-8 sm:opacity-0"
+        }`}
+      >
         <div className="flex items-center justify-between p-5 border-b border-slate-100">
           <h3 className="text-sm font-bold text-slate-900">{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500"><X className="w-4 h-4" /></button>
+          <button onClick={handleClose} className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-5">{children}</div>
       </div>
