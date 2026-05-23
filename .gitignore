@@ -1,0 +1,71 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+*.cjs
+*.mjs
+
+# Backend
+backend/dist/
+backend/node_modules/
+
+# Frontend
+frontend/dist/
+frontend/node_modules/
+frontend/.vite/
+frontend/**/*.timestamp-*.mjs
+
+# Temporary timestamp backup files created by editors/tools
+*.timestamp-*.mjs
+
+# Environment variables (never commit .env files)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Seed scripts (development only, not for production)
+firestoreSeed.ts
+firestoreSeed.js
+backend/firestoreSeed.*
+*~
+.project
+.classpath
+.c9/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+test.js*
+tmp/
+temp/
+
+
+firebase-service-account.json

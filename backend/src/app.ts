@@ -1,0 +1,567 @@
+import express from "express";
+import path from "path";
+import { createServer as createViteServer } from "vite";
+import { GoogleGenAI, Type } from "@google/genai";
+import dotenv from "dotenv";
+import { router as scamPreventionRouter, setGeminiAI } from "./modules/scamPrevention";
+import { createRealityLensRouter, setRealityLensGeminiAI } from "./modules/realityLens";
+import { router as chatbotRouter, setChatbotGeminiAI, setChatbotStateGetter } from "./modules/chatbot/index";
+import { checkBlacklist } from "./modules/scamPrevention/service";
+
+dotenv.config({
+  path: path.join(__dirname, "..", ".env"),
+});
+
+const app = express();
+app.use(express.json({ limit: "50mb" }));
+
+const PORT = Number(process.env.PORT) || 3000;
+
+// Initialize GoogleGenAI client lazy style
+let generativeAI: GoogleGenAI | null = null;
+function getGeminiAI() {
+  if (!generativeAI) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.warn("WARNING: GEMINI_API_KEY is not defined. AI functions will run in simulated demo mode.");
+    }
+    // We always set user-agent to aistudio-build as required by guidelines
+    generativeAI = new GoogleGenAI({
+      apiKey: apiKey || "MOCK_KEY",
+      httpOptions: {
+        headers: {
+          "User-Agent": "aistudio-build",
+        }
+      }
+    });
+    // Pass to scam prevention module
+      setGeminiAI(generativeAI);
+      setRealityLensGeminiAI(generativeAI);
+      setChatbotGeminiAI(generativeAI);
+      setChatbotStateGetter(() => accountsState);
+  }
+  return generativeAI;
+}
+
+// Initialize Gemini clients at startup so routes that depend on them do not
+// wait for a different endpoint to trigger setup first.
+getGeminiAI();
+
+// SIMULATED DATABASE STATE
+let accountsState = {
+  totalBalance: 10000.00,
+  discretionaryBudget: 800.00,
+  discretionaryBudgetTotal: 2000.00,
+  fixedExpenses: 1200.00,
+  userName: "Encik Mohamad Zulhilmy",
+  accountNo: "150123456789",
+  financingAccounts: [
+    { id: "fin-1", type: "Vehicle Financing-i", nextPayment: 577.00, originalAmount: 45000.00, remaining: 18000.00 },
+    { id: "fin-2", type: "Baiti Home Financing-i", nextPayment: 2100.00, originalAmount: 350000.00, remaining: 280000.00 }
+  ],
+  transactions: [
+    { id: "tx-1", date: "2026-05-20", category: "Dining", description: "Nasi Kandar Pelita Cafe", amount: -45.00, status: "completed" },
+    { id: "tx-c1", date: "2026-05-19", category: "Transfer", description: "Trsf to Syukri Bin Majid Mule AC", amount: -450.05, status: "cancelled", reason: "Detected Scam Account: Blocked via Royal Malaysia Police (PDRM) Mule Registry cross-match" },
+    { id: "tx-2", date: "2026-05-18", category: "Groceries", description: "Lotus Supermarket Cheras", amount: -156.40, status: "completed" },
+    { id: "tx-c2", date: "2026-05-17", category: "Shopping", description: "Dyson Airwrap Premium Set", amount: -2200.00, status: "refunded", reason: "Refunded Investment: Instantly revoked within 24-Hour Islamic cooling-off window after AI budget Alert" },
+    { id: "tx-3", date: "2026-05-15", category: "Utilities", description: "Tenaga Nasional Berhad", amount: -210.00, status: "completed" },
+    { id: "tx-c3", date: "2026-05-14", category: "Shopping", description: "Steam Wallet Gaming Top Up", amount: -120.00, status: "cancelled", reason: "Cancelled Payment: Changed mind after Mizan AI suggested alternative Sadaqah charity allocation" },
+    { id: "tx-4", date: "2026-05-10", category: "Reload", description: "Touch n Go eWallet Reload", amount: -100.00, status: "completed" },
+    { id: "tx-5", date: "2026-05-09", category: "Earnings", description: "Salary NEURA Islamic Transfer", amount: 5500.00, status: "completed" },
+    { id: "tx-6", date: "2026-05-05", category: "Shopping", description: "Zalora Malaysia Online", amount: -180.00, status: "completed" },
+    { id: "tx-7", date: "2026-05-01", category: "Transport", description: "Shell Petrol Cheras", amount: -85.00, status: "completed" },
+    { id: "tx-8", date: "2026-03-15", category: "Shopping", description: "Shopee Shariah Seller", amount: -125.00, status: "completed" },
+    { id: "tx-9", date: "2026-01-20", category: "Utilities", description: "Air Selangor Water Bill", amount: -38.50, status: "completed" },
+    { id: "tx-10", date: "2025-09-05", category: "Earnings", description: "Quarterly Hibah Payout", amount: 450.00, status: "completed" },
+    { id: "tx-11", date: "2025-06-10", category: "Insurance", description: "Takaful Malaysia Protection", amount: -150.00, status: "completed" },
+    { id: "tx-12", date: "2025-04-01", category: "Dining", description: "Seoul Garden Restaurant", amount: -110.00, status: "completed" }
+  ],
+  elderlyMode: false,
+  elderlyLimit: 300.00,
+  caregiverName: "Sara",
+  caregiverPhone: "+60 12-345 6789",
+  isCaregiverApproved: false,
+  lockedVaults: [
+    { id: "v-1", name: "Mudharabah Saving Account-i", amount: 1540.00, type: "investment" },
+    { id: "v-2", name: "Shopee Delay Vault (Locked)", amount: 0.00, type: "locked" }
+  ]
+};
+
+// Scam & Mule Registry - Now managed in scamPrevention module
+
+
+
+// API ROUTES
+
+// 1. GET Current state
+app.get("/api/state", (req, res) => {
+  res.json(accountsState);
+});
+
+// 2. TOGGLE Elderly Mode
+app.post("/api/toggle-elderly", (req, res) => {
+  const { enabled, limit, caregiverName, caregiverPhone } = req.body;
+  if (typeof enabled === "boolean") accountsState.elderlyMode = enabled;
+  if (typeof limit === "number") accountsState.elderlyLimit = limit;
+  if (typeof caregiverName === "string") accountsState.caregiverName = caregiverName;
+  if (typeof caregiverPhone === "string") accountsState.caregiverPhone = caregiverPhone;
+  res.json({ success: true, state: accountsState });
+});
+
+// 3. RETRIEVE simulated mule databases - Now in scamPrevention module via /api/check-blacklist
+
+// 4. RESET database state to default
+app.post("/api/reset-state", (req, res) => {
+  accountsState.totalBalance = 10000.00;
+  accountsState.discretionaryBudget = 800.00;
+  accountsState.isCaregiverApproved = false;
+  accountsState.transactions = accountsState.transactions.filter(t => !t.id.startsWith("new-"));
+  res.json({ success: true, state: accountsState });
+});
+
+// 5. CAREGIVER ACTION: APPROVE/REJECT PENDING TRANSACTION
+app.post("/api/caregiver-approval", (req, res) => {
+  const { status } = req.body;
+  accountsState.isCaregiverApproved = status === "approve";
+  res.json({ success: true, approvedState: accountsState.isCaregiverApproved });
+});
+
+// 6. MODULE 1: PREDICTIVE INTELLIGENCE PURCHASE EVALUATION PIPELINE
+app.post("/api/predict-purchase", async (req, res) => {
+  const { amount, category, itemName, isImpulseSignal } = req.body;
+  const purchaseAmount = parseFloat(amount || "0");
+  const parsedCategory = category || "Wants";
+  const labelText = itemName || "Generic Item";
+
+  if (isNaN(purchaseAmount) || purchaseAmount <= 0) {
+    return res.status(400).json({ error: "Invalid purchase amount specified" });
+  }
+
+  const baselineMean = 150.0;
+  const baselineStdDev = 75.0;
+  const zScore = (purchaseAmount - baselineMean) / baselineStdDev;
+  const isSpendingNormal = Math.abs(zScore) <= 1.5;
+
+  let classification: "reasonable" | "risky" | "impulsive" | "financially heavy" = "reasonable";
+  if (purchaseAmount > 1000) {
+    classification = "financially heavy";
+  } else if (purchaseAmount > accountsState.discretionaryBudget) {
+    classification = "risky";
+  } else if (isImpulseSignal) {
+    classification = "impulsive";
+  } else if (purchaseAmount > baselineMean + baselineStdDev) {
+    classification = "risky";
+  }
+
+  const remainingDiscretionaryBudget = accountsState.discretionaryBudget;
+  const budgetImpactPct = (purchaseAmount / remainingDiscretionaryBudget) * 100;
+  const postSpendingCapacity = remainingDiscretionaryBudget - purchaseAmount;
+  const budgetPressure = budgetImpactPct > 90 ? "CRITICAL" : budgetImpactPct > 50 ? "HIGH" : "LOW";
+
+  const hour = new Date().getUTCHours() + 8;
+  const isLateNight = hour >= 23 || hour <= 4;
+  const impulseProbability = Math.min(
+    100,
+    (isImpulseSignal ? 40 : 10) + (isLateNight ? 35 : 0) + (classification === "impulsive" ? 25 : 0)
+  );
+
+  let riskScore = 0;
+  if (zScore > 0) riskScore += Math.min(25, zScore * 10);
+  if (budgetPressure === "CRITICAL") riskScore += 40;
+  else if (budgetPressure === "HIGH") riskScore += 25;
+  riskScore += (impulseProbability / 100) * 35;
+
+  let recommendation: "PROCEED" | "REVIEW" | "RECONSIDER" = "PROCEED";
+  let color = "🟢";
+  if (riskScore >= 65 || postSpendingCapacity < -200) {
+    recommendation = "RECONSIDER";
+    color = "🔴";
+  } else if (riskScore >= 35 || postSpendingCapacity < 0) {
+    recommendation = "REVIEW";
+    color = "🟡";
+  }
+
+  const isDemoMode = !process.env.GEMINI_API_KEY;
+  let textExplanation = `This purchase is ${(purchaseAmount / baselineMean).toFixed(1)}x higher than your usual baseline of RM ${baselineMean}. Paying RM ${purchaseAmount} will put high pressure on your remaining discretionary budget (RM ${remainingDiscretionaryBudget} remaining). We suggest delaying and thinking it over.`;
+
+  if (!isDemoMode) {
+    try {
+      const gAI = getGeminiAI();
+      const prompt = `You are a respectful personal Islamic financial CFO.
+Analyze this proposed purchase for user "${accountsState.userName}":
+Item: "${labelText}"
+Price: RM ${purchaseAmount}
+Category: "${parsedCategory}"
+User Current Discretionary Budget left: RM ${remainingDiscretionaryBudget}
+Z-score relative to normal spending: ${zScore.toFixed(2)}
+Impulse score: ${impulseProbability}%
+Predicted Type of Decision: ${classification}
+Risk recommendations: ${recommendation} (Z-Score is ${zScore.toFixed(2)}, budget remaining is RM ${postSpendingCapacity}).
+
+Generate a concise, honest, comforting Shariah-oriented 2-sentence explanation saying WHY this prediction is "${recommendation}" and what they should consider. Do not mention HTML or variables. Be extremely humble. Keep it around 40 words.`;
+
+      const response = await gAI.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt
+      });
+      if (response && response.text) {
+        textExplanation = response.text.trim();
+      }
+    } catch (e: any) {
+      console.error("Gemini Purchase Predictor call failed, fallback used: ", e.message);
+    }
+  }
+
+  res.json({
+    amount: purchaseAmount,
+    category: parsedCategory,
+    itemName: labelText,
+    baseline: {
+      userBaselineMean: baselineMean,
+      zScore: zScore,
+      isNormal: isSpendingNormal
+    },
+    decisionType: classification,
+    affordability: {
+      budgetRemaining: remainingDiscretionaryBudget,
+      remainingAfterPurchase: postSpendingCapacity,
+      pressure: budgetPressure,
+      budgetImpactPct: budgetImpactPct
+    },
+    behavioral: {
+      lateNightActive: isLateNight,
+      impulseProbability: impulseProbability
+    },
+    result: {
+      recommendation,
+      color,
+      explanation: textExplanation,
+      riskScore: Math.round(riskScore)
+    }
+  });
+});
+
+// 7. MODULE 2: MULTIMODAL AGENTIC ORCHESTRATOR CHATBOT
+// Orchestrator moved to a dedicated chatbot module for clarity and maintainability
+app.use("/api", chatbotRouter);
+
+// 7b. MODULE 3: REALITY LENS VISION SCAN
+app.use(
+  "/api",
+  createRealityLensRouter({
+    getState: () => accountsState,
+  })
+);
+
+// 8. ROUTE TO COMPLETE ACTUAL FUND TRANSFER
+app.post("/api/complete-transfer", (req, res) => {
+  const { amount, accountNo, recipientName, reference } = req.body;
+  const transferVal = parseFloat(amount || "0");
+
+  if (isNaN(transferVal) || transferVal <= 0) {
+    return res.status(400).json({ error: "Invalid transfer amount." });
+  }
+
+  if (accountsState.totalBalance < transferVal) {
+    return res.status(400).json({ error: "Insufficient funds in current Qard Account-i." });
+  }
+
+  const muleMatch = checkBlacklist(accountNo);
+  if (muleMatch && !accountsState.isCaregiverApproved) {
+    return res.status(403).json({
+      error: "WARNING: Intercepted potential fraudulent mule transaction. Cool-down is mandatory.",
+      requiresCoolDown: true
+    });
+  }
+
+  accountsState.totalBalance -= transferVal;
+  if (transferVal < 500) {
+    accountsState.discretionaryBudget = Math.max(0, accountsState.discretionaryBudget - transferVal);
+  }
+
+  const newTx = {
+    id: `new-tx-${Date.now()}`,
+    date: new Date().toISOString().substring(0, 10),
+    category: "Transfer",
+    description: `Trsf to ${recipientName || accountNo}`,
+    amount: -transferVal,
+    status: "completed" as const
+  };
+  accountsState.transactions.unshift(newTx);
+  accountsState.isCaregiverApproved = false;
+
+  res.json({
+    success: true,
+    newBalance: accountsState.totalBalance,
+    transaction: newTx,
+    updatedState: accountsState
+  });
+});
+
+// 9. ZAKAT: Auto-calculate from connected portfolio (demo)
+app.post("/api/zakat/auto-calc", (req, res) => {
+  const nisabValueRM = 29750; // demo value based on 85g @ RM350/g
+  // Sum liquid balances: totalBalance + lockedVaults amounts
+  const totalBalance = accountsState.totalBalance || 0;
+  const vaultsTotal = (accountsState.lockedVaults || []).reduce((s, v) => s + (Number(v.amount) || 0), 0);
+  const portfolioValue = Math.round((totalBalance + vaultsTotal) * 100) / 100;
+  const meetsNisab = portfolioValue >= nisabValueRM;
+  const zakatDue = meetsNisab ? Math.round(portfolioValue * 0.025 * 100) / 100 : 0;
+
+  const response = {
+    portfolioValue: `RM ${portfolioValue.toLocaleString()}`,
+    nisab: `85 grams (~RM ${nisabValueRM.toLocaleString()})`,
+    meetsNisab,
+    zakatDue: `RM ${zakatDue.toLocaleString()}`,
+    details: {
+      totalBalance: `RM ${totalBalance.toLocaleString()}`,
+      vaultsTotal: `RM ${vaultsTotal.toLocaleString()}`,
+      formula: `[Total Portfolio Value] × 2.5%`,
+    },
+  };
+
+  res.json({ success: true, ...response });
+});
+
+// 10. ZAKAT: Mock payment flow (demo)
+app.post("/api/zakat/pay", (req, res) => {
+  const { amount } = req.body;
+  const parsed = typeof amount === "string" ? parseFloat(amount.replace(/[^0-9.-]+/g, "")) : Number(amount || 0);
+  if (isNaN(parsed) || parsed <= 0) return res.status(400).json({ success: false, error: "Invalid amount" });
+  if (accountsState.totalBalance < parsed) return res.status(400).json({ success: false, error: "Insufficient funds" });
+
+  accountsState.totalBalance = Math.round((accountsState.totalBalance - parsed) * 100) / 100;
+  const tx = { id: `new-pay-${Date.now()}`, date: new Date().toISOString().slice(0,10), category: 'Zakat', description: 'Zakat payment (demo)', amount: -parsed, status: 'completed' };
+  accountsState.transactions.unshift(tx);
+
+  res.json({ success: true, paid: `RM ${parsed.toLocaleString()}`, transaction: tx, state: accountsState });
+});
+
+// ============================================================================
+// SCAM PREVENTION MODULE - Moved to src/modules/scamPrevention
+// Register module routes with /api prefix
+app.use("/api", scamPreventionRouter);
+
+
+// VITE SERVER OR FALLBACK STATIC SERVING
+export async function startServer() {
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+      root: path.join(process.cwd(), "..", "frontend")
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), "..", "frontend", "dist");
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`NEURA Cognitive Banking Engine booted successfully on port ${PORT}`);
+  });
+}
+
+export { app, PORT };
+import express from "express";
+import path from "path";
+import dotenv from "dotenv";
+import { initializeApp, cert } from "firebase-admin/app";
+import fs from "fs";
+
+dotenv.config();
+
+// ============================================================================
+// FIREBASE ADMIN SDK INITIALIZATION (RUNS FIRST BEFORE ROUTERS LOAD)
+// ============================================================================
+const serviceAccountKeyPath = path.join(process.cwd(), "firebase-service-account.json");
+if (fs.existsSync(serviceAccountKeyPath)) {
+  try {
+    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountKeyPath, "utf8"));
+    initializeApp({
+      credential: cert(serviceAccount)
+    });
+    console.log("✅ Firebase Admin SDK initialized successfully");
+  } catch (err) {
+    console.error("❌ Failed to initialize Firebase connection context:", err);
+    process.exit(1);
+  }
+} else {
+  console.warn("⚠️ firebase-service-account.json not found. Downstream Firestore pools will experience structural failures.");
+}
+
+// ============================================================================
+// ROUTER IMPORTS (EVALUATED AFTER CORE INITIALIZATION SEED)
+// ============================================================================
+import { createServer as createViteServer } from "vite";
+import { router as scamPreventionRouter, caregiverOTPRouter } from "./modules/scamPrevention";
+
+const app = express();
+app.use(express.json({ limit: "50mb" }));
+
+const PORT = process.env.PORT || 3000;
+
+// SIMULATED DATABASE STATE
+let accountsState = {
+  totalBalance: 10000.00,
+  discretionaryBudget: 800.00,
+  discretionaryBudgetTotal: 2000.00,
+  fixedExpenses: 1200.00,
+  userName: "Encik Mohamad Zulhilmy",
+  accountNo: "150123456789",
+  financingAccounts: [
+    { id: "fin-1", type: "Vehicle Financing-i", nextPayment: 577.00, originalAmount: 45000.00, remaining: 18000.00 },
+    { id: "fin-2", type: "Baiti Home Financing-i", nextPayment: 2100.00, originalAmount: 350000.00, remaining: 280000.00 }
+  ],
+  transactions: [
+    { id: "tx-1", date: "2026-05-20", category: "Dining", description: "Nasi Kandar Pelita Cafe", amount: -45.00, status: "completed" },
+    { id: "tx-c1", date: "2026-05-19", category: "Transfer", description: "Trsf to Syukri Bin Majid Mule AC", amount: -450.05, status: "cancelled", reason: "Detected Scam Account: Blocked via Royal Malaysia Police (PDRM) Mule Registry cross-match" },
+    { id: "tx-2", date: "2026-05-18", category: "Groceries", description: "Lotus Supermarket Cheras", amount: -156.40, status: "completed" },
+    { id: "tx-c2", date: "2026-05-17", category: "Shopping", description: "Dyson Airwrap Premium Set", amount: -2200.00, status: "refunded", reason: "Refunded Investment: Instantly revoked within 24-Hour Islamic cooling-off window after AI budget Alert" },
+    { id: "tx-3", date: "2026-05-15", category: "Utilities", description: "Tenaga Nasional Berhad", amount: -210.00, status: "completed" },
+    { id: "tx-c3", date: "2026-05-14", category: "Shopping", description: "Steam Wallet Gaming Top Up", amount: -120.00, status: "cancelled", reason: "Cancelled Payment: Changed mind after Mizan AI suggested alternative Sadaqah charity allocation" },
+    { id: "tx-4", date: "2026-05-10", category: "Reload", description: "Touch n Go eWallet Reload", amount: -100.00, status: "completed" },
+    { id: "tx-5", date: "2026-05-09", category: "Earnings", description: "Salary NEURA Islamic Transfer", amount: 5500.00, status: "completed" },
+    { id: "tx-6", date: "2026-05-05", category: "Shopping", description: "Zalora Malaysia Online", amount: -180.00, status: "completed" },
+    { id: "tx-7", date: "2026-05-01", category: "Transport", description: "Shell Petrol Cheras", amount: -85.00, status: "completed" },
+    { id: "tx-8", date: "2026-03-15", category: "Shopping", description: "Shopee Shariah Seller", amount: -125.00, status: "completed" },
+    { id: "tx-9", date: "2026-01-20", category: "Utilities", description: "Air Selangor Water Bill", amount: -38.50, status: "completed" },
+    { id: "tx-10", date: "2025-09-05", category: "Earnings", description: "Quarterly Hibah Payout", amount: 450.00, status: "completed" },
+    { id: "tx-11", date: "2025-06-10", category: "Insurance", description: "Takaful Malaysia Protection", amount: -150.00, status: "completed" },
+    { id: "tx-12", date: "2025-04-01", category: "Dining", description: "Seoul Garden Restaurant", amount: -110.00, status: "completed" }
+  ],
+  elderlyMode: false,
+  elderlyLimit: 300.00,
+  caregiverName: "Sara",
+  caregiverPhone: "+60 12-345 6789",
+  isCaregiverApproved: false,
+  lockedVaults: [
+    { id: "v-1", name: "Mudharabah Saving Account-i", amount: 1540.00, type: "investment" },
+    { id: "v-2", name: "Shopee Delay Vault (Locked)", amount: 0.00, type: "locked" }
+  ]
+};
+
+// CORE API ROUTES
+app.get("/api/state", (req, res) => {
+  res.json(accountsState);
+});
+
+app.post("/api/toggle-elderly", (req, res) => {
+  const { enabled, limit, caregiverName, caregiverPhone } = req.body;
+  if (typeof enabled === "boolean") accountsState.elderlyMode = enabled;
+  if (typeof limit === "number") accountsState.elderlyLimit = limit;
+  if (typeof caregiverName === "string") accountsState.caregiverName = caregiverName;
+  if (typeof caregiverPhone === "string") accountsState.caregiverPhone = caregiverPhone;
+  res.json({ success: true, state: accountsState });
+});
+
+app.post("/api/reset-state", (req, res) => {
+  accountsState.totalBalance = 10000.00;
+  accountsState.discretionaryBudget = 800.00;
+  accountsState.isCaregiverApproved = false;
+  accountsState.transactions = accountsState.transactions.filter(t => !t.id.startsWith("new-"));
+  res.json({ success: true, state: accountsState });
+});
+
+app.post("/api/caregiver-approval", (req, res) => {
+  const { status } = req.body;
+  accountsState.isCaregiverApproved = status === "approve";
+  res.json({ success: true, approvedState: accountsState.isCaregiverApproved });
+});
+
+app.post("/api/complete-transfer", (req, res) => {
+  const { amount, accountNo, recipientName, reference } = req.body;
+  const transferVal = parseFloat(amount || "0");
+
+  if (isNaN(transferVal) || transferVal <= 0) {
+    return res.status(400).json({ error: "Invalid transfer amount." });
+  }
+
+  if (accountsState.totalBalance < transferVal) {
+    return res.status(400).json({ error: "Insufficient funds in current Qard Account-i." });
+  }
+
+  accountsState.totalBalance -= transferVal;
+  if (transferVal < 500) {
+    accountsState.discretionaryBudget = Math.max(0, accountsState.discretionaryBudget - transferVal);
+  }
+
+  const newTx = {
+    id: `new-tx-${Date.now()}`,
+    date: new Date().toISOString().substring(0, 10),
+    category: "Transfer",
+    description: `Trsf to ${recipientName || accountNo}`,
+    amount: -transferVal,
+    status: "completed" as const
+  };
+  accountsState.transactions.unshift(newTx);
+  accountsState.isCaregiverApproved = false;
+
+  res.json({
+    success: true,
+    newBalance: accountsState.totalBalance,
+    transaction: newTx,
+    updatedState: accountsState
+  });
+});
+
+app.post("/api/save-difference", (req, res) => {
+  const { amount } = req.body;
+  const val = parseFloat(amount || "0");
+  if (val > 0 && accountsState.totalBalance >= val) {
+    accountsState.totalBalance -= val;
+    const item = accountsState.lockedVaults.find(v => v.id === "v-1");
+    if (item) item.amount += val;
+    res.json({ success: true, state: accountsState });
+  } else {
+    res.status(400).json({ error: "Unable to deposit money to saving vault." });
+  }
+});
+
+app.post("/api/delay-lock", (req, res) => {
+  const { amount } = req.body;
+  const val = parseFloat(amount || "0");
+  if (val > 0 && accountsState.totalBalance >= val) {
+    accountsState.totalBalance -= val;
+    const item = accountsState.lockedVaults.find(v => v.id === "v-2");
+    if (item) item.amount += val;
+    res.json({ success: true, state: accountsState });
+  } else {
+    res.status(400).json({ error: "Insufficient balance to lock in Shopee Delay-Vault." });
+  }
+});
+
+// Bind Scam Prevention Sub-Module Endpoints
+app.use("/api", scamPreventionRouter);
+app.use("/api", caregiverOTPRouter);
+
+// VITE SERVER ENDPOINT TUNNELING OR STATIC ASSET HOSTING
+export async function startServer() {
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+      root: path.join(process.cwd(), "..", "frontend")
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), "..", "frontend", "dist");
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  }
+
+  // Explicit IPv4 binding for reliable frontend local development proxy handshake
+  return new Promise<void>((resolve) => {
+    app.listen(Number(PORT) || 3000, "127.0.0.1", () => {
+      console.log(`🚀 NEURA Cognitive Banking Engine booted successfully on http://127.0.0.1:${PORT}`);
+      resolve();
+    });
+  });
+}
+
+export { app, PORT };

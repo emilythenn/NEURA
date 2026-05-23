@@ -1,0 +1,10 @@
+{
+  "name": "NEURA",
+  "description": "Bank4U - A demo retail-banking system showcasing active integration of the NEURA Proactive Financial Protection layer, with real-time semantic intercepts, chatbot assistance, and scam safeguards.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
