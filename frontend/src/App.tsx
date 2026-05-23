@@ -5,10 +5,12 @@ import {
   ArrowLeftRight, Smartphone, Shield, Scan, QrCode, Copy, Check, Download, ArrowLeft
 } from "lucide-react";
 import Navigation from "./components/Navigation";
-import PredictiveLayer from "./components/PredictiveLayer";
 import AgentChatbot from "./components/AgentChatbot";
 import FundTransfer from "./components/FundTransfer";
 import RealityLens from "./components/RealityLens";
+import PredictiveLayerPage from "./pages/index";
+import TrackerPage from "./pages/tracker";
+import WishlistPage from "./pages/wishlist";
 import { AccountsState, ChatMessage } from "./types";
 import { DEMO_OTP_CODES, isValidOtp, generateDemoOtp } from "./demoOTP";
 
@@ -32,6 +34,7 @@ export default function App() {
   });
 
   const [activeTab, setActiveTab] = useState<"analysis" | "chat" | "home" | "scanner" | "profile">("home");
+  const [pagePath, setPagePath] = useState(() => window.location.pathname);
   const [showTransfer, setShowTransfer] = useState(false);
   const [transferPresetMode, setTransferPresetMode] = useState<"transfer" | "pay" | "reload">("transfer");
   const [statusBar, setStatusBar] = useState<{ message: string; type: "success" | "warn" } | null>(null);
@@ -150,6 +153,12 @@ export default function App() {
     fetchState();
   }, []);
 
+  useEffect(() => {
+    const handlePopState = () => setPagePath(window.location.pathname);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   // Post notifications
   const postStatusMessage = (msg: string, type: "success" | "warn") => {
     setStatusBar({ message: msg, type });
@@ -179,6 +188,13 @@ export default function App() {
     }
 
     return value;
+  };
+
+  const navigateTo = (path: string) => {
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, "", path);
+    }
+    setPagePath(path);
   };
 
   // Toggle elderly mode on backend
@@ -269,6 +285,23 @@ export default function App() {
     postStatusMessage("In-app notification preview ready for approval.", "success");
   };
 
+
+  if (pagePath === "/predict") {
+    return (
+      <PredictiveLayerPage
+        onNavigateToTracker={() => navigateTo("/tracker")}
+        onNavigateToWishlist={() => navigateTo("/wishlist")}
+      />
+    );
+  }
+
+  if (pagePath === "/tracker") {
+    return <TrackerPage onBack={() => navigateTo("/")} />;
+  }
+
+  if (pagePath === "/wishlist") {
+    return <WishlistPage />;
+  }
   const verifyHandshake = async () => {
     if (!typedOtp) {
       setOtpVerificationError("Please enter the One-Time Code from caregiver.");
@@ -393,6 +426,7 @@ export default function App() {
           accountsState={accountsState} 
           onElderlyToggle={handleElderlyToggleClick}
           onReset={handleResetOnServer}
+          onNavigate={navigateTo}
         />
       )}
 
@@ -1407,10 +1441,9 @@ export default function App() {
         )}
 
           {activeTab === "analysis" && (
-            <PredictiveLayer 
-              accountsState={accountsState} 
-              onAskAICompanion={handleAskAICompanion}
-              onSelectAction={handlePrePurchaseSelectAction}
+            <PredictiveLayerPage
+              onNavigateToTracker={() => navigateTo("/tracker")}
+              onNavigateToWishlist={() => navigateTo("/wishlist")}
             />
           )}
 

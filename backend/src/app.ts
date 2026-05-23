@@ -13,7 +13,21 @@ const __dirname = path.dirname(__filename);
 import { router as scamPreventionRouter, setGeminiAI, router as caregiverOTPRouter } from "./modules/scamPrevention";
 import { createRealityLensRouter, setRealityLensGeminiAI } from "./modules/realityLens";
 import { router as chatbotRouter, setChatbotGeminiAI, setChatbotStateGetter } from "./modules/chatbot/index";
+// Prediction / Analytics routers
+
+import predictionChatbotRouter from "./modules/predictionAnalysis/chatbot/chatbot.routes";
+import financeRouter from "./modules/predictionAnalysis/finance/finance.routes";
+import trackerRouter from "./modules/predictionAnalysis/tracker/tracker.routes";
+import wishlistRouter from "./modules/predictionAnalysis/wishlist/wishlist.routes";
 import { checkBlacklist } from "./modules/scamPrevention/service";
+import { env } from "./config/env";
+import { errorMiddleware, notFoundMiddleware } from "./middleware/error.middleware";
+import trackerRoutes  from "./modules/predictionAnalysis/tracker/tracker.routes";
+import financeRoutes  from "./modules/predictionAnalysis/finance/finance.routes";
+import { purchaseRouter, historyRouter } from "./modules/predictionAnalysis/prediction/predict.routes";
+import stateRoutes    from "./modules/predictionAnalysis/state/state.routes";
+import wishlistRoutes from "./modules/predictionAnalysis/wishlist/wishlist.routes";
+import chatbotRoutes  from "./modules/predictionAnalysis/chatbot/chatbot.routes";
 
 dotenv.config({
   path: path.join(__dirname, "..", ".env"),
@@ -117,124 +131,49 @@ app.post("/api/caregiver-approval", (req, res) => {
   res.json({ success: true, approvedState: accountsState.isCaregiverApproved });
 });
 
-// 6. MODULE 1: PREDICTIVE INTELLIGENCE PURCHASE EVALUATION PIPELINE
-app.post("/api/predict-purchase", async (req, res) => {
-  const { amount, category, itemName, isImpulseSignal } = req.body;
-  const purchaseAmount = parseFloat(amount || "0");
-  const parsedCategory = category || "Wants";
-  const labelText = itemName || "Generic Item";
+// Tracker — GET/POST/DELETE incomes & expenses
+  app.use("/api/tracker", trackerRoutes);
 
-  if (isNaN(purchaseAmount) || purchaseAmount <= 0) {
-    return res.status(400).json({ error: "Invalid purchase amount specified" });
-  }
+  // Finance summary
+  app.use("/api/finance", financeRoutes);
 
-  const baselineMean = 150.0;
-  const baselineStdDev = 75.0;
-  const zScore = (purchaseAmount - baselineMean) / baselineStdDev;
-  const isSpendingNormal = Math.abs(zScore) <= 1.5;
+  // Predict purchase — POST /api/predict-purchase
+  app.use("/api/predict-purchase", purchaseRouter);
 
-  let classification: "reasonable" | "risky" | "impulsive" | "financially heavy" = "reasonable";
-  if (purchaseAmount > 1000) {
-    classification = "financially heavy";
-  } else if (purchaseAmount > accountsState.discretionaryBudget) {
-    classification = "risky";
-  } else if (isImpulseSignal) {
-    classification = "impulsive";
-  } else if (purchaseAmount > baselineMean + baselineStdDev) {
-    classification = "risky";
-  }
+  // Predict history — GET/POST/DELETE /api/predict-history
+  app.use("/api/predict-history", historyRouter);
 
-  const remainingDiscretionaryBudget = accountsState.discretionaryBudget;
-  const budgetImpactPct = (purchaseAmount / remainingDiscretionaryBudget) * 100;
-  const postSpendingCapacity = remainingDiscretionaryBudget - purchaseAmount;
-  const budgetPressure = budgetImpactPct > 90 ? "CRITICAL" : budgetImpactPct > 50 ? "HIGH" : "LOW";
+  // State — /api/state, /api/toggle-elderly, /api/reset-state,
+  //         /api/delay-lock, /api/complete-transfer,
+  //         /api/auto-debits
+  app.use("/api", stateRoutes);
 
-  const hour = new Date().getUTCHours() + 8;
-  const isLateNight = hour >= 23 || hour <= 4;
-  const impulseProbability = Math.min(
-    100,
-    (isImpulseSignal ? 40 : 10) + (isLateNight ? 35 : 0) + (classification === "impulsive" ? 25 : 0)
-  );
+  // Wishlist Vault — GET/POST/PATCH/DELETE /api/wishlist
+  app.use("/api/wishlist", wishlistRoutes);
 
-  let riskScore = 0;
-  if (zScore > 0) riskScore += Math.min(25, zScore * 10);
-  if (budgetPressure === "CRITICAL") riskScore += 40;
-  else if (budgetPressure === "HIGH") riskScore += 25;
-  riskScore += (impulseProbability / 100) * 35;
+  // Chatbot intent router — POST /api/chatbot/intent
+  app.use("/api/chatbot", chatbotRoutes);
 
-  let recommendation: "PROCEED" | "REVIEW" | "RECONSIDER" = "PROCEED";
-  let color = "🟢";
-  if (riskScore >= 65 || postSpendingCapacity < -200) {
-    recommendation = "RECONSIDER";
-    color = "🔴";
-  } else if (riskScore >= 35 || postSpendingCapacity < 0) {
-    recommendation = "REVIEW";
-    color = "🟡";
-  }
-
-  const isDemoMode = !process.env.GEMINI_API_KEY;
-  let textExplanation = `This purchase is ${(purchaseAmount / baselineMean).toFixed(1)}x higher than your usual baseline of RM ${baselineMean}. Paying RM ${purchaseAmount} will put high pressure on your remaining discretionary budget (RM ${remainingDiscretionaryBudget} remaining). We suggest delaying and thinking it over.`;
-
-  if (!isDemoMode) {
-    try {
-      const gAI = getGeminiAI();
-      const prompt = `You are a respectful personal Islamic financial CFO.
-Analyze this proposed purchase for user "${accountsState.userName}":
-Item: "${labelText}"
-Price: RM ${purchaseAmount}
-Category: "${parsedCategory}"
-User Current Discretionary Budget left: RM ${remainingDiscretionaryBudget}
-Z-score relative to normal spending: ${zScore.toFixed(2)}
-Impulse score: ${impulseProbability}%
-Predicted Type of Decision: ${classification}
-Risk recommendations: ${recommendation} (Z-Score is ${zScore.toFixed(2)}, budget remaining is RM ${postSpendingCapacity}).
-
-Generate a concise, honest, comforting Shariah-oriented 2-sentence explanation saying WHY this prediction is "${recommendation}" and what they should consider. Do not mention HTML or variables. Be extremely humble. Keep it around 40 words.`;
-
-      const response = await gAI.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: prompt
-      });
-      if (response && response.text) {
-        textExplanation = response.text.trim();
-      }
-    } catch (e: any) {
-      console.error("Gemini Purchase Predictor call failed, fallback used: ", e.message);
-    }
-  }
-
-  res.json({
-    amount: purchaseAmount,
-    category: parsedCategory,
-    itemName: labelText,
-    baseline: {
-      userBaselineMean: baselineMean,
-      zScore: zScore,
-      isNormal: isSpendingNormal
-    },
-    decisionType: classification,
-    affordability: {
-      budgetRemaining: remainingDiscretionaryBudget,
-      remainingAfterPurchase: postSpendingCapacity,
-      pressure: budgetPressure,
-      budgetImpactPct: budgetImpactPct
-    },
-    behavioral: {
-      lateNightActive: isLateNight,
-      impulseProbability: impulseProbability
-    },
-    result: {
-      recommendation,
-      color,
-      explanation: textExplanation,
-      riskScore: Math.round(riskScore)
-    }
-  });
-});
-
+  app.use(notFoundMiddleware);
+  app.use(errorMiddleware);
 // 7. MODULE 2: MULTIMODAL AGENTIC ORCHESTRATOR CHATBOT
 // Orchestrator moved to a dedicated chatbot module for clarity and maintainability
 app.use("/api", chatbotRouter);
+
+// Prediction & analytics endpoints used by frontend
+// Mount Predictive purchase evaluation and history
+app.use("/api/predict-purchase", purchaseRouter);
+app.use("/api/predict-history", historyRouter);
+
+// Mount finance helpers (pattern analysis) used by the Predictive page
+app.use("/api/finance", financeRouter);
+
+// Mount prediction-analysis chatbot endpoint (intent handler used by Predictive intercepts)
+app.use("/api/chatbot", predictionChatbotRouter);
+
+// Tracker & wishlist APIs used by frontend pages
+app.use("/api/tracker", trackerRouter);
+app.use("/api/wishlist", wishlistRouter);
 
 // 7b. MODULE 3: REALITY LENS VISION SCAN
 app.use(

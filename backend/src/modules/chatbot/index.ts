@@ -88,7 +88,7 @@ function extractSignals(message: string) {
   return {
     lower,
     hasScamSignal: /\b(scam|phishing|frozen|lhdn|arrest|otp|tac)\b|transfer.*money|send.*money|click.*link|your.*account.*frozen|verify.*account|immediate.*transfer/i.test(message) || urlLike.length > 0,
-    hasBudgetSignal: /\b(can\s+i\s+afford|should\s+i\s+buy|is\s+this.*expensive|is.*worth.*it)\b/i.test(lower) && /RM\s*\d+/i.test(lower),
+    hasBudgetSignal: /\b(can\s+i\s+afford|should\s+i\s+buy|is\s+this.*expensive|is.*worth.*it|budget|remaining budget|spend|dining|weekend|lunch|dinner|shopping|purchase|expense)\b/i.test(lower),
     hasBarakahSignal: /\b(zakat|halal|shariah|riba|halal|investment.*halal|is.*halal|crypto.*halal|guaranteed.*return)\b/i.test(lower),
     hasEhsanSignal: /\b(tolong|baki|makcik|pakcik|elderly|caregiver|old.*parent|senior|grandmother|grandfather)\b/i.test(lower),
     hasSafarSignal: /\b(travel|trip|flight|hotel|itinerary|journey|booking|accommodation)\b/i.test(lower),
@@ -117,21 +117,40 @@ function buildMizanResponse(message: string, state?: AppStateSnapshot | null) {
   const balance = state?.totalBalance ?? 0;
   const discretionary = state?.discretionaryBudget ?? 0;
   const amountMatch = message.match(/RM\s*([0-9,.]+)/i);
+  const diningSignals = /\b(dining|dinner|lunch|restaurant|cafe|brunch|weekend|high dining|eat out|food)\b/i.test(message);
   const amount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, "")) : null;
 
   // If NO amount mentioned, give generic budgeting advice
   if (amount === null) {
+    const baseBudget = discretionary > 0 ? discretionary : balance;
+    const casualDiningCap = Math.max(0, Math.round(baseBudget * 0.12));
+    const comfortableDiningCap = Math.max(casualDiningCap, Math.round(baseBudget * 0.18));
     return {
       routedAgent: "Mizan" as ChatAgent,
-      finalText: "💰 Budget Guidance:\n" +
-        `• Current available balance: RM ${balance.toFixed(2)}\n` +
-        `• Monthly discretionary budget: RM ${discretionary.toFixed(2)}\n` +
-        "• Smart spending rule: Don't exceed 30% of discretionary in one purchase\n" +
-        "• Emergency buffer: Keep 3 months of fixed expenses saved\n" +
-        "• Tip: Mention a specific amount (e.g., 'Can I afford RM500?') for detailed analysis\n",
-      structuredTip: "Provide an amount for personalized affordability analysis",
-      confidence: 65,
-      reasoning: "General budget guidance - no specific purchase amount detected",
+      finalText: diningSignals
+        ? [
+            "🍽️ Dining Affordability Check",
+            `• Current available balance: RM ${balance.toFixed(2)}`,
+            `• Monthly discretionary budget: RM ${discretionary.toFixed(2)}`,
+            `• Suggested casual dining cap: RM ${casualDiningCap}`,
+            `• Comfortable high-dining cap: RM ${comfortableDiningCap}`,
+            "",
+            "Interpretation:",
+            `• Under RM ${casualDiningCap}: usually safe for a normal weekend meal`,
+            `• Between RM ${casualDiningCap} and RM ${comfortableDiningCap}: okay if the rest of the weekend budget is protected`,
+            `• Above RM ${comfortableDiningCap}: likely too high for a casual weekend treat`,
+            "",
+            "If you send the restaurant/menu price, I’ll calculate the exact remaining budget after the meal."
+          ].join("\n")
+        : "💰 Budget Guidance:\n" +
+          `• Current available balance: RM ${balance.toFixed(2)}\n` +
+          `• Monthly discretionary budget: RM ${discretionary.toFixed(2)}\n` +
+          "• Smart spending rule: Don't exceed 30% of discretionary in one purchase\n" +
+          "• Emergency buffer: Keep 3 months of fixed expenses saved\n" +
+          "• Tip: Mention a specific amount (e.g., 'Can I afford RM500?') for detailed analysis\n",
+      structuredTip: diningSignals ? "Share the meal price and I’ll compare it against your remaining budget" : "Provide an amount for personalized affordability analysis",
+      confidence: diningSignals ? 82 : 65,
+      reasoning: diningSignals ? "Detected dining/weekend spending request, so I mapped it to budget analysis even without an exact amount" : "General budget guidance - no specific purchase amount detected",
       evidence: [{ label: "Current balance", value: `RM ${balance.toFixed(2)}` }],
       sources: [{ title: "Your account snapshot", note: "Budget analysis" }],
     } as any;
@@ -179,12 +198,19 @@ function buildMizanResponse(message: string, state?: AppStateSnapshot | null) {
         "✗ Too expensive right now; consider saving first or looking for alternatives",
   ].join("\n");
 
+  const spendingAdvice = decisionStatus === "🟢 PROCEED SAFELY"
+    ? "You can likely go ahead, but keep the total bill near the planned amount and avoid add-ons."
+    : decisionStatus === "🟡 ACCEPTABLE WITH CAUTION"
+      ? "You can still do it if you cap extras, skip upsells, and keep part of the weekend budget untouched."
+      : "This is likely too high for a normal weekend meal, so use a smaller venue or set a stricter cap.";
+
   return {
     routedAgent: "Mizan" as ChatAgent,
     finalText,
     decisionStatus,
     confidence: 85,
     reasoning: `Analyzed RM ${amount.toFixed(2)} purchase against your RM ${discretionary.toFixed(2)} monthly budget`,
+    structuredTip: spendingAdvice,
     evidence: [
       { label: "Purchase amount", value: `RM ${amount.toFixed(2)}` },
       { label: "Discretionary budget", value: `RM ${discretionary.toFixed(2)}` },
@@ -692,25 +718,38 @@ function buildSafarResponse(message: string, state?: AppStateSnapshot | null) {
     budget ? `• Trip target: ${days} days to ${destination}` : undefined,
     budget ? `• Budget provided: RM ${budget?.toLocaleString()}` : undefined,
     "",
-    `Estimated breakdown (demo heuristics):`,
-    budget ? `• Flight (Return): ~RM ${flightEst} (${Math.round(flightPct*100)}% of budget)` : undefined,
-    budget ? `• Accommodation (nights ${Math.max(0, days-1)}): ~RM ${accomEst} (${Math.round(accomPct*100)}% of budget)` : undefined,
-    budget ? `• Daily Spending (Food, Transport, Activities): ~RM ${dailyTotal} (≈ RM ${dailyPerDay}/day)` : undefined,
+    `Suggested budget split:`,
+    budget ? `• Flights: about RM ${flightEst}` : undefined,
+    budget ? `• Hotels: about RM ${accomEst} total (≈ RM ${Math.max(0, Math.round((accomEst || 0) / Math.max(days - 1, 1)))} / night)` : undefined,
+    budget ? `• Food + local transport + attractions: about RM ${dailyTotal} total (≈ RM ${dailyPerDay}/day)` : undefined,
+    budget ? `• Buffer: keep about RM ${Math.max(0, budget - ((flightEst || 0) + (accomEst || 0) + (dailyTotal || 0)))} for SIM, entry tickets, and surprises` : undefined,
     "",
-    `🛫 Flight Hacks (${destination}):`,
-    `• Target hubs: ${southernHubs.join(" or ")}. Flying into SZX/CAN often halves costs vs northern gateways.`,
-    `• Timing: Depart Tue/Wed — mid-week fares can be ~30% cheaper vs Fri/Sat departures.`,
-    `• Target Price: Do not pay more than RM ${Math.max(flightEst || 0, 850)}`,
+    `Flight target:`,
+    budget ? `• Realistic return flight target: RM ${Math.max(flightEst || 0, 850)} to RM ${Math.max(flightEst || 0, 1450)} depending on dates` : undefined,
+    `• Cheapest strategy: aim for Tue/Wed departures and southern hubs (${southernHubs.join(" / ")})`,
     "",
-    `⚙️ Safar Action Layer (FIP-OS Integrations):`,
-    `[ 🔔 Set Flight Price Alert at RM ${flightEst} ]`,
-    `[ 💳 Activate Be U Visa Travel Mode (Zero FX Markup in China) ]`,
-    `[ 🛡️ Add Takaful Travel Insurance (RM 45) ]`,
+    `Example ${destination} plan:`,
+    budget ? [
+      `• Day 1: arrive, check in, get a SIM, and keep the first dinner simple`,
+      `• Day 2: city core sightseeing + metro pass + one paid attraction`,
+      `• Day 3: market / food street + museum or cultural stop`,
+      `• Day 4: flexible day for side trip, shopping, or weather backup`,
+      `• Day 5: low-cost exploration with a fixed cash cap`,
+      `• Day 6: buffer day for transport, snacks, and packing`,
+      `• Day 7: checkout, airport transfer, and return`,
+    ].join("\n") : undefined,
     "",
-    `📅 Itinerary & Budget Lock:`,
-    `Would you like me to generate a day-by-day ${destination} itinerary and lock RM ${budget?.toLocaleString()} into a dedicated "China Travel Vault" so you don't accidentally spend it before the trip?`,
+    `What I would do next:`,
+    `• Compare 2-3 flight dates before booking`,
+    `• Lock hotel first if the fare is stable`,
+    `• Set a hard daily spend cap so food and taxis do not eat the trip budget`,
+    `• If you want, I can turn this into a tighter city-by-city itinerary once you choose the China city`,
     "",
-    `Reply: [ Yes, build the itinerary & lock the vault ]  [ No, just track flight prices ]`
+    `Safar Action Layer:`,
+    `[ 🔔 Set Flight Price Alert at RM ${Math.max(flightEst || 0, 850)} ]`,
+    `[ 💳 Add Travel Card / FX check ]`,
+    `[ 🛡️ Add Travel Insurance ]`,
+    `[ 📅 Generate detailed day-by-day itinerary ]`
   ].filter(Boolean).join("\n");
 
   const safarStructured = {
@@ -724,10 +763,19 @@ function buildSafarResponse(message: string, state?: AppStateSnapshot | null) {
       dailyTotal: `RM ${dailyTotal}`,
       dailyPerDay: dailyPerDay ? `RM ${dailyPerDay}/day` : undefined
     } : undefined,
+    itinerary: budget ? [
+      { day: 1, title: 'Arrival and settle in', detail: 'Check in, get a local SIM, and keep the first night light.' },
+      { day: 2, title: 'Core sightseeing', detail: 'Use metro/public transit and keep one paid attraction only.' },
+      { day: 3, title: 'Food and culture day', detail: 'Plan one market meal and one museum or cultural stop.' },
+      { day: 4, title: 'Flex day', detail: 'Reserve this for weather, shopping, or a side trip.' },
+      { day: 5, title: 'Low-cost exploration', detail: 'Use walking routes, public transit, and a fixed cash cap.' },
+      { day: 6, title: 'Buffer and packing', detail: 'Leave money for transport, snacks, and checkout logistics.' },
+      { day: 7, title: 'Return', detail: 'Move early to the airport and avoid last-minute spend.' },
+    ] : undefined,
     flightHacks: [
       { title: 'Route', detail: 'Fly KUL → SZX/CAN (southern hub) to reduce price' },
       { title: 'Timing', detail: 'Depart mid-week (Tue/Wed) for lower fares (~30% savings)' },
-      { title: 'Target Price', detail: `Prefer <= RM ${Math.max(flightEst || 0, 850)}` }
+      { title: 'Target Price', detail: `Prefer between RM ${Math.max(flightEst || 0, 850)} and RM ${Math.max(flightEst || 0, 1450)}` }
     ],
     actionLayer: {
       setPriceAlert: { label: `Set flight alert at RM ${flightEst}`, enabled: false },

@@ -29,32 +29,32 @@ export default function AgentChatbot({ accountsState, chatbotMessages, onAddMess
   const QUICK_PROMPTS = [
     {
       label: "🧠 1. Orchestrator Agent (Master)",
-      text: "Who are you and how do you coordinate the other specialist agents?",
+      text: "What can you help me with in this app, and which agent should I use for loans, transfers, budget checks, scam alerts, halal questions, or travel planning?",
       file: null
     },
     {
       label: "🛡️ 2. Shield Agent (Security Check)",
-      text: "Validate this WhatsApp screenshot for scam language, fake authority claims, and suspicious links.",
+      text: "Validate this WhatsApp screenshot for scam language, fake authority claims, suspicious links, money mule pressure, and OTP requests. Tell me the risk level and what I should do next.",
       file: null
     },
     {
       label: "💰 3. Mizan Agent (Personal CFO)",
-      text: "Can I afford high dining this weekend? Check my remaining budget.",
+      text: "Can I afford RM180 for high dining this weekend? Check my remaining budget, tell me what I can safely spend, and say whether I should go ahead or choose a cheaper option.",
       file: null
     },
     {
       label: "🕌 4. Barakah Agent (Halal & Zakat)",
-      text: "How do I calculate Zakat on my gold investments compliant with official Shariah guidelines?",
+      text: "How do I calculate Zakat on 100g of gold worth RM35,000? Show the nisab threshold, haul rule, formula, and the exact amount due.",
       file: null
     },
     {
       label: "🤲 5. Ehsan Agent (Elderly Support)",
-      text: "Tolong semak baki akaun makcik dalam Bahasa Melayu",
+      text: "Tolong semak baki akaun makcik, jelaskan baki yang selamat dibelanja, dan beri arahan mudah dalam Bahasa Melayu.",
       file: null
     },
     {
       label: "✈️ 6. Safar Agent (Travel Planner)",
-      text: "I want to go to China for 7 days with a budget of RM3,000. Give me a feasibility check, flight hacks, and complete itinerary!",
+      text: "I want to go to Shanghai, China for 7 days with a budget of RM3,000. Give me an estimated return flight price, hotel cost per night, daily food and transport budget, a day-by-day itinerary, and tell me if the trip is feasible.",
       file: null
     }
   ];

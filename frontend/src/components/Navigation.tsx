@@ -6,9 +6,10 @@ interface NavigationProps {
   accountsState: AccountsState;
   onElderlyToggle: (enabled: boolean) => void;
   onReset: () => void;
+  onNavigate: (path: string) => void;
 }
 
-export default function Navigation({ accountsState, onElderlyToggle, onReset }: NavigationProps) {
+export default function Navigation({ accountsState, onElderlyToggle, onReset, onNavigate }: NavigationProps) {
   return (
     <header className="bg-white border-b border-slate-150 text-slate-800 shadow-xs relative select-none">
       <div className="max-w-7xl mx-auto px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
@@ -35,6 +36,13 @@ export default function Navigation({ accountsState, onElderlyToggle, onReset }: 
 
         {/* Right Action widgets */}
         <div className="flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1">
+            <button onClick={() => onNavigate("/")} className="px-3 py-1.5 text-[10px] font-bold text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-colors cursor-pointer">Dashboard</button>
+            <button onClick={() => onNavigate("/predict")} className="px-3 py-1.5 text-[10px] font-bold text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-colors cursor-pointer">Predict</button>
+            <button onClick={() => onNavigate("/tracker")} className="px-3 py-1.5 text-[10px] font-bold text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-colors cursor-pointer">Tracker</button>
+            <button onClick={() => onNavigate("/wishlist")} className="px-3 py-1.5 text-[10px] font-bold text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-colors cursor-pointer">Wishlist</button>
+          </div>
+
           {/* Help Line */}
           <div className="hidden md:flex items-center gap-1 text-[10px] text-slate-500 font-medium bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100 font-mono">
             <span>Support: +60 3-26 900 900</span>
