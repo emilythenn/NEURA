@@ -21,7 +21,7 @@ Emma is a frequent online shopper, who needs confidence, clarity, and protection
 - Estimating budget impact and recommending whether to make or delay purchase
 - Screening receivers' bank account number for scam risk and enforcing cooling periods for detected scam or suspicious mule account
 
-Core features — the pipeline
+Core Features — the Pipeline
 ---------------------------------------
 1) Predictive Financial Insights (Before: deciding to make a purchase)
    - NEURA analyzes a user's spending history, commitments and behavioral patterns to estimate affordability and the likely budget impact of a purchase. It highlights anomalies, computes whether a purchase fits within safe limits, and can recommend delaying a purchase by placing it in a Wishlist Vault (Delay & Lock) for reconsideration.
@@ -39,19 +39,19 @@ Core features — the pipeline
 5) Multi-Agent AI Chatbot
    - A conversational orchestrator routes questions and actions to specialized agents: Shield (fraud & security), Mizan (financial wellness), Barakah (Shariah compliance), Ehsan (accessibility/emergency support) and Safar (travel planning). Each agent provides focused guidance and recommendations tailored to its domain.
 
-System architecture (simplified)
+System Architecture (simplified)
 --------------------------------
 User → Frontend (React) → Backend (Express + Orchestrator + RealityLens) → Firestore
                                                                ↳ Gemini (Google GenAI)
 
-Tech stack
+Tech Stack
 ----------
 - Frontend: React, TypeScript, Vite, Tailwind CSS
 - Backend: Node.js, TypeScript, Express
 - AI: Google GenAI (Gemini) via `@google/genai`
 - Database: Google Firestore (Firebase Admin SDK)
 
-Quick start (development)
+Quick Start (development)
 -------------------------
 Prerequisites
 - Node.js 18+ and npm
@@ -84,7 +84,7 @@ npm run dev -w frontend
 # open http://localhost:5173
 ```
 
-Environment variables
+Environment Variables
 ---------------------
 Create a `.env` in the backend folder (or set env vars in your shell). Example entries:
 
