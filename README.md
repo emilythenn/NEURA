@@ -5,7 +5,7 @@ Hackathon Project: Fintech Forward 2026 — Be U by Bank Islam × UMPSA | By: La
 
 Overview
 --------
-NEURA is an AI-driven financial decision support system that helps users make safer, smarter, and more financially responsible decisions before, during, and after transactions. Inspired by neural systems, NEURA continuously monitors signals, detects risks, and responds proactively to protect users' finances.
+NEURA is an AI-driven financial decision support system that helps users make safer, smarter, and more financially responsible decisions before, during, and after transactions. Inspired by neural systems, NEURA continuously monitors signals, detects risks, and responds proactively to protect users' finances. **It is not another banking app or e-Wallet, it is an intelligence layer to be integrated in any of the existing banking apps or e-Wallets.**
 
 Key capabilities
 - Predict financial impact before spending (Affordability checks)
