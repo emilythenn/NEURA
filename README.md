@@ -8,7 +8,7 @@ Overview
 NEURA is an AI-driven financial decision support system that helps users make safer, smarter, and more financially responsible decisions before, during, and after transactions. Inspired by neural systems, NEURA continuously monitors signals, detects risks, and responds proactively to protect users' finances.
 
 Key capabilities
-- Predict financial impact before spending (affordability checks)
+- Predict financial impact before spending (Affordability checks)
 - Compare prices and find better deals with an AI scanner (Reality Lens)
 - Prevent scam transfers and mule account fraud (Shield)
 - Provide elderly protection with caregiver approval flows
@@ -16,21 +16,22 @@ Key capabilities
 
 Persona — Meet Emma
 -------------------
-Emma is a frequent online shopper who needs confidence, clarity, and protection when buying online. NEURA helps Emma by:
+Emma is a frequent online shopper, who needs confidence, clarity, and protection when buying online. NEURA helps Emma by:
 - Showing evidence-backed price comparisons and savings
-- Estimating budget impact and recommending whether to delay
-- Screening receivers for scam risk and enforcing cooling periods
+- Estimating budget impact and recommending whether to make or delay purchase
+- Screening receivers' bank account number for scam risk and enforcing cooling periods for detected scam or suspicious mule account
 
-Core features — user‑facing descriptions
+Core features — the pipeline
 ---------------------------------------
-1) Predictive Financial Insights (Before purchase)
+1) Predictive Financial Insights (Before: deciding to make a purchase)
    - NEURA analyzes a user's spending history, commitments and behavioral patterns to estimate affordability and the likely budget impact of a purchase. It highlights anomalies, computes whether a purchase fits within safe limits, and can recommend delaying a purchase by placing it in a Wishlist Vault (Delay & Lock) for reconsideration.
 
-2) Smart Deal AI Scanner — Reality Lens (During purchase)
+2) Smart Deal AI Scanner — Reality Lens (During: finding the best deal for a purchase)
    - The Reality Lens lets users capture a product image or price tag and returns an evidence-backed comparison: detected item, store price, online market price(s), marketplace proof links and the computed savings. The UI surfaces whether the item is affordable, suggests safer alternatives and offers direct actions (e.g., invest the savings or keep in wallet).
 
-3) Scam Prevention (During / After)
-   - NEURA screens transfer recipients and transaction context for scam signals such as mule accounts, suspicious patterns, urgency language or phishing indicators. For high-risk transfers the system warns the user and can enforce a configurable cooling period (for example 60 seconds) to reduce impulsive fraud losses.
+3) Scam Prevention (After: making payment for the purchase)
+   - NEURA screens recipients' bank account to detect blacklisted scam or mule accounts. For high-risk transfers (scam or mule account matched with database records), the system warns the user and enforce a 60-second cooling period to reduce impulsive fraud losses.
+   - Database is sourced from government, such as Semak Mule PDRM, and verified user reports. Semak Mule PDRM is an online portal provided by the Commercial Crime Investigation Department (CCID) of the Royal Malaysia Police to help the public check bank accounts, phone numbers, or company names that may potentially be involved in fraudulent activities or used as mule accounts.
 
 4) Elderly Financial Protection
    - An optional Elderly Mode provides an extra safeguards layer: predefined spending limits, caregiver registration and OTP-based caregiver approvals for transfers that exceed those limits. The flow is designed to protect vulnerable users while preserving access.
@@ -42,7 +43,6 @@ System architecture (simplified)
 --------------------------------
 User → Frontend (React) → Backend (Express + Orchestrator + RealityLens) → Firestore
                                                                ↳ Gemini (Google GenAI)
-
 
 Tech stack
 ----------
@@ -56,7 +56,7 @@ Quick start (development)
 Prerequisites
 - Node.js 18+ and npm
 - Firebase service account JSON for Firestore
-- (Optional) GEMINI_API_KEY for live Gemini scans
+- GEMINI_API_KEY for live Gemini AI scans
 
 Install dependencies
 
@@ -100,10 +100,9 @@ Notes
 
 Contributing
 ------------
-Open an issue, then create a PR. I can scaffold CONTRIBUTING.md and developer scripts on request.
+Open an issue, then create a PR. 
 
-License
--------
-Add a LICENSE file if you intend to publish this project publicly.
+By: Last Minute
+
 
 
