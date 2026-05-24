@@ -1,7 +1,7 @@
 
 # NEURA — AI Financial Decision Intelligence Layer
 
-Hackathon project: Fintech Forward 2026 — Be U by Bank Islam × UMPSA
+Hackathon Project: Fintech Forward 2026 — Be U by Bank Islam × UMPSA | By: Last Minute
 
 Overview
 --------
@@ -101,8 +101,6 @@ Notes
 Contributing
 ------------
 Open an issue, then create a PR. 
-
-By: Last Minute
 
 
 
